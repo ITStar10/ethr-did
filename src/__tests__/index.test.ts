@@ -22,9 +22,11 @@ describe('EthrDID', () => {
     resolver: Resolvable
 
   const provider: JsonRpcProvider = createProvider()
-
+  
   beforeAll(async () => {
     const factory = ContractFactory.fromSolidity(DidRegistryContract).connect(provider.getSigner(0))
+
+    console.log('Setting up configuration for')
 
     let registryContract: Contract
     registryContract = await factory.deploy()
@@ -36,7 +38,12 @@ describe('EthrDID', () => {
 
     accounts = await provider.listAccounts()
 
+    // accounts.map((index, item) => {
+    //   console.log(index, ' - ', item)
+    // })
+
     identity = accounts[1]
+    console.log('Identity = ', identity)
     owner = accounts[2]
     delegate1 = accounts[3]
     delegate2 = accounts[4]
@@ -49,6 +56,8 @@ describe('EthrDID', () => {
       identifier: identity,
       chainNameOrId: 'dev',
     })
+
+    console.log('ethrDID = ', ethrDid)
   })
 
   describe('presets', () => {

@@ -43,7 +43,7 @@
     ],
     "testEnvironment": "node",
     "testMatch": [
-      "**/__tests__/**/*.test.[jt]s"
+      "**/__tests__/**/polygon.test.[jt]s"
     ]
   },
   "devDependencies": {
@@ -80,7 +80,6 @@
     "@ethersproject/transactions": "^5.5.0",
     "@ethersproject/wallet": "^5.5.0",
     "did-jwt": "^5.12.3",
-    "did-resolver": "^3.1.5",
-    "ethr-did-resolver": "^5.0.3"
+    "did-resolver": "^3.1.5"
   }
 }

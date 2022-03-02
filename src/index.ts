@@ -73,6 +73,7 @@ export class EthrDID {
         conf.registry || REGISTRY
       )
       this.did = this.controller.did
+      // console.log('EthrDID class -> EthrDID controller = ', this.controller)
     } else {
       const net = network || chainNameOrId
       let networkString = net ? `${net}:` : ''
@@ -120,10 +121,17 @@ export class EthrDID {
       throw new Error('a web3 provider configuration is needed for network operations')
     }
     const owner = await this.lookupOwner()
+
+    // console.log('ethr-did controller = ', this.controller)
+
+    console.log('txOptions = ', txOptions)
+
     const receipt = await this.controller.changeOwner(newOwner, {
       ...txOptions,
       from: owner,
     })
+    // console.log('txResult = ', receipt)
+
     this.owner = newOwner
     return receipt.transactionHash
   }
