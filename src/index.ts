@@ -130,7 +130,7 @@ export class EthrDID {
       ...txOptions,
       from: owner,
     })
-    // console.log('txResult = ', receipt)
+    console.log('txResult = ', receipt)
 
     this.owner = newOwner
     return receipt.transactionHash

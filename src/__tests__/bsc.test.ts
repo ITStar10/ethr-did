@@ -40,7 +40,8 @@ describe('EthrDID', () => {
     // Public key
     identity = '0x599b3912A63c98dC774eF3E60282fBdf14cda748'.toLowerCase()
     
-    owner = '0x2b5ad5c4795c026514f8317c7a215e218dccd6cf' //accounts[2]
+    owner = identity;
+    // owner = '0x2b5ad5c4795c026514f8317c7a215e218dccd6cf' //accounts[2]
     // owner = '0x4982f11C9a4BAf30003a7f252C208A44D111BB41' //accounts[2]
 
     // delegate1 = '0x6813eb9362372eef6200f3b1dbc3f819671cba69' //accounts[3]
@@ -83,6 +84,7 @@ describe('EthrDID', () => {
 
   })
   */
+  
 
   
   it ('document', async () => {
@@ -175,12 +177,12 @@ describe('EthrDID', () => {
       await provider.waitForTransaction(txHash)
     }*/
 
-    // const txHash = await ethrDid.setAttribute(
-    //   'did/svc/VeridaDatabase#0x84e5fb4eb5c3f53d8506e7085dfbb0ef333c5f7d0769bcaf4ca2dc0ca4698fd4#database',
-    //   'https://db.testnet.verida.io:5002/', 
-    //   86400
-    // )
-    // await provider.waitForTransaction(txHash)
+    const txHash = await ethrDid.setAttribute(
+      'did/svc/VeridaDatabase#0x84e5fb4eb5c3f53d8506e7085dfbb0ef333c5f7d0769bcaf4ca2dc0ca4698fd4#database',
+      'https://db.testnet.verida.io:5002/', 
+      86400
+    )
+    await provider.waitForTransaction(txHash)
 
     // const msgHash = await ethrDid.setAttribute(
     //   'did/svc/VeridaMessage#0x84e5fb4eb5c3f53d8506e7085dfbb0ef333c5f7d0769bcaf4ca2dc0ca4698fd4#messaging', 

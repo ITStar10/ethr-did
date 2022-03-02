@@ -14,9 +14,11 @@ import { privateKey } from '/mnt/Work/Sec/mainnet_secret.json'
 jest.setTimeout(600000)
 
 describe('EthrDID', () => {
-  const rpcUrl = 'https://polygon-rpc.com/'
+  // https://speedy-nodes-nyc.moralis.io/bd1c39d7c8ee1229b16b4a97/polygon/mumbai
+  // https://rpc-mumbai.maticvigil.com
+  const rpcUrl = 'https://rpc-mumbai.maticvigil.com'
 
-  const registry = '0x0C693d28eC25fe03044e681d86D373d719a5b9Ba'
+  const registry = '0x44511bFfDf104fC5f61f74219f65ed4c410d4C20'
 
   let ethrDid: EthrDID,
     identity: string,
@@ -28,9 +30,31 @@ describe('EthrDID', () => {
 
     // Public key
     identity = '0x599b3912A63c98dC774eF3E60282fBdf14cda748'.toLowerCase()
-
+    
     owner = identity
     // owner = '0x2b5ad5c4795c026514f8317c7a215e218dccd6cf'
+
+    /*
+    // const provider = new JsonRpcProvider('https://speedy-nodes-nyc.moralis.io/bd1c39d7c8ee1229b16b4a97/polygon/mumbai');
+    const provider = new JsonRpcProvider('https://rpc-mumbai.maticvigil.com');
+
+    // Polygon testnet 
+    ethrDid = new EthrDID({
+      // privateKey,
+      // rpcUrl,
+
+      provider,
+      chainNameOrId: 80001,
+      registry,
+      identifier: identity,
+      
+    })
+    */
+
+    // Ethereum RopStep with JSON RPC
+    // const provider = new InfuraProvider('https://ropsten.infura.io/v3/5f1154f1b17640568b10a0eed10b1f32', 3)
+    // const provider = new InfuraProvider('5f1154f1b17640568b10a0eed10b1f32', 3)
+    // const provider = new JsonRpcProvider('https://ropsten.infura.io/v3/5f1154f1b17640568b10a0eed10b1f32', 3)
 
     provider = new JsonRpcProvider(rpcUrl);
 
@@ -43,7 +67,7 @@ describe('EthrDID', () => {
       provider,
       
       identifier: identity,
-      chainNameOrId : '0x89',
+      chainNameOrId : '0x13881',
 
       rpcUrl,
       registry,
@@ -63,14 +87,14 @@ describe('EthrDID', () => {
     const newOwner = await ethrDid.lookupOwner()
     console.log('New Owner = ', newOwner)
 
-  })*/
-  
+  })
+  */
 
   it ('document', async () => {
     const providerConfig = { 
       rpcUrl, 
       registry,
-      chainId : 137,
+      chainId : 80001,
 
       provider,
       txSigner,
@@ -161,7 +185,6 @@ describe('EthrDID', () => {
       'https://db.testnet.verida.io:5002/', 
       86400
     )
-    console.log('txHash: ', txHash)
     await provider.waitForTransaction(txHash)
 
     // const msgHash = await ethrDid.setAttribute(
