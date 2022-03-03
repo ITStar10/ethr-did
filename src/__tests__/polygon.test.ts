@@ -156,13 +156,13 @@ describe('EthrDID', () => {
       await provider.waitForTransaction(txHash)
     }*/
 
-    const txHash = await ethrDid.setAttribute(
-      'did/svc/VeridaDatabase#0x84e5fb4eb5c3f53d8506e7085dfbb0ef333c5f7d0769bcaf4ca2dc0ca4698fd4#database',
-      'https://db.testnet.verida.io:5002/', 
-      86400
-    )
-    console.log('txHash: ', txHash)
-    await provider.waitForTransaction(txHash)
+    // const txHash = await ethrDid.setAttribute(
+    //   'did/svc/VeridaDatabase',
+    //   'https://db.testnet.verida.io:5002/', 
+    //   86400
+    // )
+    // console.log('txHash: ', txHash)
+    // await provider.waitForTransaction(txHash)
 
     // const msgHash = await ethrDid.setAttribute(
     //   'did/svc/VeridaMessage#0x84e5fb4eb5c3f53d8506e7085dfbb0ef333c5f7d0769bcaf4ca2dc0ca4698fd4#messaging', 

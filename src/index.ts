@@ -245,6 +245,13 @@ function attributeToHex(key: string, value: string | Uint8Array): string {
     return hexlify(value)
   }
   const matchKeyWithEncoding = key.match(/^did\/(pub|auth|svc)\/(\w+)(\/(\w+))?(\/(\w+))?$/)
+
+  // Added for service name. Need to be updated for supporting UTF-8, later
+  // if (matchKeyWithEncoding?.[1] === 'svc') {
+  //   console.log('ethr-did: attributeToHex : ', <string>value)
+  //   return <string>value
+  // }
+
   const encoding = matchKeyWithEncoding?.[6]
   const matchHexString = (<string>value).match(/^0x[0-9a-fA-F]*$/)
   if (encoding && !matchHexString) {

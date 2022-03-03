@@ -13,7 +13,7 @@ import { verifyJWT } from 'did-jwt'
 
 import { privateKey } from '/mnt/Work/Sec/mainnet_secret.json'
 
-jest.setTimeout(100000)
+jest.setTimeout(600000)
 
 describe('EthrDID', () => {
 
@@ -21,7 +21,6 @@ describe('EthrDID', () => {
 
   // const registry = '0xb525f4bC2b186FA153099D86488e40621592464b'
   const registry = '0xDB06192CEdBc3a246D59883A6945ae7CDF02E807'
-    
 
   let ethrDid: EthrDID,
     plainDid: EthrDID,
@@ -99,18 +98,7 @@ describe('EthrDID', () => {
     const ethrDidResolver = getResolver(providerConfig)
     const didResolver = new Resolver(ethrDidResolver)
 
-    // didResolver.resolve(ethrDid.did).then(
-    //   (doc) => console.log
-    // )
-
     const doc = await didResolver.resolve(ethrDid.did)
-    console.log('Ethr Doc = ', doc)
-
-    console.log('**************************')
-
-    
-
-
 
     const delegate1 = '0x01298a7ec3e153dac8d0498ea9b40d3a40b51900'
 
@@ -177,22 +165,35 @@ describe('EthrDID', () => {
       await provider.waitForTransaction(txHash)
     }*/
 
-    const txHash = await ethrDid.setAttribute(
-      'did/svc/VeridaDatabase#0x84e5fb4eb5c3f53d8506e7085dfbb0ef333c5f7d0769bcaf4ca2dc0ca4698fd4#database',
-      'https://db.testnet.verida.io:5002/', 
-      86400
-    )
-    await provider.waitForTransaction(txHash)
-
-    // const msgHash = await ethrDid.setAttribute(
-    //   'did/svc/VeridaMessage#0x84e5fb4eb5c3f53d8506e7085dfbb0ef333c5f7d0769bcaf4ca2dc0ca4698fd4#messaging', 
+    // const txHash = await ethrDid.setAttribute(
+    //   'did/svc/VeridaDatabase',
     //   'https://db.testnet.verida.io:5002/', 
     //   86400
     // )
-    // await provider.waitForTransaction(msgHash)
+    // await provider.waitForTransaction(txHash)
 
-    console.log(doc)
-    console.log(doc.didDocument.verificationMethod)
+    const msgHash = await ethrDid.setAttribute(
+      'did/svc/VeridaMessage', 
+      'https://db.testnet.verida.io:5002##0x84e5fb4eb5c3f53d8506e7085dfbb0ef333c5f7d0769bcaf4ca2dc0ca4600003##messaging', 
+      86400
+    )
+    await provider.waitForTransaction(msgHash)
+
+    const startTime = Date.now()
+    console.log('Start : ', startTime)
+    const txHash = await ethrDid.setAttribute(
+      'did/svc/VeridaDatabase',
+      'https://db.testnet.verida.io:5002##0x84e5fb4eb5c3f53d8506e7085dfbb0ef333c5f7d0769bcaf4ca2dc0ca4600004##database',
+      86400
+    )
+    await provider.waitForTransaction(txHash)
+    const endTime = Date.now()
+    console.log('End : ', endTime)
+
+    console.log('Time Consumed: ', endTime - startTime)
+
+    // console.log(doc)
+    // console.log(doc.didDocument.verificationMethod)
     console.log(doc.didDocument.service)
   })
   
