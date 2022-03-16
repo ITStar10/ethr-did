@@ -6,24 +6,9 @@ import { Wallet } from '@ethersproject/wallet'
 // import { getResolver } from 'ethr-did-resolver'
 import { getResolver } from 'ethr-did-resolver'
 
-import { EthrDID, BulkDelegateParam, BulkAttributeParam, BulkSignedDelegateParam, BulkSignedAttributeParam, DelegateTypes } from '../index'
+import { EthrDID, BulkDelegateParam, BulkAttributeParam, DelegateTypes } from '../index'
 
 import { privateKey } from '/mnt/Work/Sec/test.json'
-
-import {
-  arrayify,
-  BytesLike,
-  concat,
-  formatBytes32String,
-  hexConcat,
-  hexlify,
-  hexZeroPad,
-  keccak256,
-  parseBytes32String,
-  SigningKey,
-  toUtf8Bytes,
-  zeroPad,
-} from 'ethers/lib/utils'
 
 jest.setTimeout(600000)
 
@@ -31,10 +16,7 @@ describe('EthrDID', () => {
 
   const rpcUrl = 'https://speedy-nodes-nyc.moralis.io/bd1c39d7c8ee1229b16b4a97/bsc/testnet'
 
-  // Contract address deployed
-  // bulkAdd with 2 param
-  // const registry = '0x258A75E9DF2F3BfB8b0854A7A7003044B3d94e0E'
-  const registry = '0x5Ed257A2BD6FABDD6CF9EceeCCE6c0Aa97d407a4'
+  const registry = '0x258A75E9DF2F3BfB8b0854A7A7003044B3d94e0E'
 
   // Wallet addresses
   const delegate1 = '0x01298a7ec3e153dac8d0498ea9b40d3a40b51900'
@@ -44,25 +26,6 @@ describe('EthrDID', () => {
    
     provider: JsonRpcProvider,
     txSigner: Wallet
-
-  // Data for Signing Transaction
-  const privateKey = arrayify('0xa285ab66393c5fdda46d6fbad9e27fafd438254ab72ad5acb681a0e9f20f5d7b')
-  const signerAddress = '0x2036C6CD85692F0Fb2C26E6c6B2ECed9e4478Dfd'
-
-  // Function to sign data
-  const signData = async (
-    identity: string,
-    // signerAddress: string,
-    privateKeyBytes: Uint8Array,
-    dataBytes: Uint8Array,
-    nonce: number
-  ) => {
-    const paddedNonce = zeroPad(arrayify(nonce), 32)
-    const dataToSign = hexConcat(['0x1900', registry, paddedNonce, identity, dataBytes])
-    const hash = keccak256(dataToSign)
-    return new SigningKey(privateKeyBytes).signDigest(hash)
-  }
-    
 
   beforeAll(async () => {
     // Public key
@@ -85,13 +48,6 @@ describe('EthrDID', () => {
       registry,
     })
   })
-
-  /*
-  it('nonceTest',async () => {
-    const result = await ethrDid.nonce(signerAddress);
-    console.log("Returns : ", Number(result))
-  })
-  */
 
   describe('bulkAdd', () => {
     // let didResolver,
@@ -122,7 +78,6 @@ describe('EthrDID', () => {
           delegateType: DelegateTypes.enc,
         }
       )
-
       /*
       dParams.push(
       // Verification method
@@ -141,80 +96,28 @@ describe('EthrDID', () => {
       const context = '0x84e5fb4eb5c3f53d8506e7085dfbb0ef333c5f7d0769bcaf4ca2dc0ca4698fd4'
 
       const aParams: BulkAttributeParam[] = []
-      
+      /*
       aParams.push(
         // Service
         {
-          name: 'did/svc/VeridaDatabase',
+          key: 'did/svc/VeridaDatabase',
           value: 'https://db.testnet.verida.io:5002##' + context + '##database'
           // expiresIn? 
         },{
-          name: 'did/svc/VeridaMessage',
+          key: 'did/svc/VeridaMessage',
           value: 'https://db.testnet.verida.io:5002##' + context + '##messaging'
         },{
-          name: 'did/svc/VeridaNotification',
+          key: 'did/svc/VeridaNotification',
           value: 'https://notification.testnet.verida.io:5002##' + context + '##notification'
         },{
-          name: 'did/svc/VeridaStorage',
+          key: 'did/svc/VeridaStorage',
           value: 'https://storage.testnet.verida.io:5002##' + context + '##storage'
         },{
-          name: 'did/svc/BlockchainAddress',
+          key: 'did/svc/BlockchainAddress',
           value: '0x01298a7ec3e153dac8d0498ea9b40d3a40b51900##' + context + '##ethereum:eip155-1'
         },
       )
-      
-
-      let nonce = Number(await ethrDid.nonce(signerAddress));
-
-      const sig = await signData(
-        signerAddress,
-        privateKey,
-        concat([
-          toUtf8Bytes('addDelegate'),
-          formatBytes32String('attestor'),
-          delegate1,
-          zeroPad(hexlify(86400), 32),
-        ]),
-        nonce++
-      )
-      
-      const signedDParams : BulkSignedDelegateParam[] = [
-        {
-          identity: signerAddress,
-          sigV: sig.v,
-          sigR: sig.r,
-          sigS: sig.s,
-          delegateType: formatBytes32String('attestor'),
-          delegate: delegate1,
-          validity: 86400,
-        }
-      ]
-
-
-      const sig2 = await signData(
-        signerAddress,
-        // signerAddress,
-        privateKey,
-        concat([
-          toUtf8Bytes('setAttribute'),
-          formatBytes32String('encryptionKey'),
-          toUtf8Bytes('mykey'),
-          zeroPad(hexlify(86400), 32),
-        ]),
-        nonce++
-      )
-
-      const signedAParams : BulkSignedAttributeParam[] = [
-        // {
-        //   identity: signerAddress,
-        //   sigV: sig2.v,
-        //   sigR: sig2.r,
-        //   sigS: sig2.s,
-        //   name: formatBytes32String('encryptionKey'),
-        //   value: toUtf8Bytes('mykey'),
-        //   validity: 86400,
-        // }
-      ]
+      */
 
       
       const startTime = Date.now()
@@ -223,8 +126,6 @@ describe('EthrDID', () => {
       const txHash = await ethrDid.bulkAdd(
         dParams,
         aParams,
-        signedDParams,
-        signedAParams
       )
       await provider.waitForTransaction(txHash)
 

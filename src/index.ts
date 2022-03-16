@@ -50,13 +50,33 @@ type DelegateOptions = {
 export type BulkDelegateParam = {
   delegateType?: DelegateTypes
   delegate: string
-  expiresIn?: number
+  validity?: number
+}
+
+export type BulkSignedDelegateParam = {
+  identity: string
+  sigV: number
+  sigR: string
+  sigS: string
+  delegateType: string
+  delegate: string
+  validity?: number
 }
 
 export type BulkAttributeParam = {
-  key: string
+  name: string
   value: string | Uint8Array
-  expiresIn?: number
+  validity?: number
+}
+
+export type BulkSignedAttributeParam = {
+  identity: string
+  sigV: number
+  sigR: string
+  sigS: string
+  name: string
+  value: string | Uint8Array
+  validity?: number
 }
 
 export class EthrDID {
@@ -218,6 +238,20 @@ export class EthrDID {
     return receipt.transactionHash
   }
 
+  async nonce(signer: string, gasLimit?: number, txOptions: CallOverrides = {}): Promise<BigInt> {
+    if (typeof this.controller === 'undefined') {
+      throw new Error('a web3 provider configuration is needed for network operations')
+    }
+    const owner = await this.lookupOwner()
+    const receipt = await this.controller.nonce(signer, {
+      gasLimit,
+      ...txOptions,
+      from: owner,
+    })
+    console.log('Ethr-DID : Nonce = ', receipt)
+    return receipt
+  }
+
   // Create a temporary signing delegate able to sign JWT on behalf of identity
   async createSigningDelegate(
     delegateType = DelegateTypes.veriKey,
@@ -255,6 +289,8 @@ export class EthrDID {
   async bulkAdd(
     delegateParams: BulkDelegateParam[],
     attributeParams: BulkAttributeParam[],
+    signedDelegateParams: BulkSignedDelegateParam[],
+    signedAttributeParams: BulkSignedAttributeParam[],
     /** @deprecated, please use txOptions.gasLimit */
     gasLimit?: number,
     txOptions: CallOverrides = {}
@@ -266,21 +302,43 @@ export class EthrDID {
     const controllerDParams = delegateParams.map((item) => {
       return {
         delegateType: item.delegateType ?? DelegateTypes.veriKey,
-        delegateAddress: item.delegate,
-        exp: item.expiresIn ?? 86400,
+        delegate: item.delegate,
+        validity: item.validity ?? 86400,
       }
     })
 
     const controllerAParams = attributeParams.map((item) => {
       return {
-        attrName: item.key,
-        attrValue: attributeToHex(item.key, item.value),
-        exp: item.expiresIn ?? 86400,
+        name: item.name,
+        value: attributeToHex(item.name, item.value),
+        validity: item.validity ?? 86400,
+      }
+    })
+
+    const controllerSignedDParams = signedDelegateParams.map((item) => {
+      return {
+        ...item,
+        // delegateType: item.delegateType ?? DelegateTypes.veriKey,
+        validity: item.validity ?? 86400,
+      }
+    })
+
+    const controllerSignedAParams = signedAttributeParams.map((item) => {
+      return {
+        ...item,
+        // value: attributeToHex(item.name, item.value),
+        validity: item.validity ?? 86400,
       }
     })
 
     const owner = await this.lookupOwner()
-    const receipt = await this.controller.bulkAdd(controllerDParams, controllerAParams, { ...txOptions, from: owner })
+    const receipt = await this.controller.bulkAdd(
+      controllerDParams,
+      controllerAParams,
+      controllerSignedDParams,
+      controllerSignedAParams,
+      { ...txOptions, from: owner }
+    )
     return receipt.transactionHash
   }
 }
