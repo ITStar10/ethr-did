@@ -47,6 +47,18 @@ type DelegateOptions = {
   expiresIn?: number
 }
 
+export type BulkDelegateParam = {
+  delegateType?: DelegateTypes
+  delegate: string
+  expiresIn?: number
+}
+
+export type BulkAttributeParam = {
+  key: string
+  value: string | Uint8Array
+  expiresIn?: number
+}
+
 export class EthrDID {
   public did: string
   public address: string
@@ -237,6 +249,39 @@ export class EthrDID {
 
   async verifyJWT(jwt: string, resolver: Resolvable, audience = this.did): Promise<JWTVerified> {
     return verifyJWT(jwt, { resolver, audience })
+  }
+
+  // Newly Added
+  async bulkAdd(
+    delegateParams: BulkDelegateParam[],
+    attributeParams: BulkAttributeParam[],
+    /** @deprecated, please use txOptions.gasLimit */
+    gasLimit?: number,
+    txOptions: CallOverrides = {}
+  ): Promise<string> {
+    if (typeof this.controller === 'undefined') {
+      throw new Error('a web3 provider configuration is needed for network operations')
+    }
+
+    const controllerDParams = delegateParams.map((item) => {
+      return {
+        delegateType: item.delegateType ?? DelegateTypes.veriKey,
+        delegateAddress: item.delegate,
+        exp: item.expiresIn ?? 86400,
+      }
+    })
+
+    const controllerAParams = attributeParams.map((item) => {
+      return {
+        attrName: item.key,
+        attrValue: attributeToHex(item.key, item.value),
+        exp: item.expiresIn ?? 86400,
+      }
+    })
+
+    const owner = await this.lookupOwner()
+    const receipt = await this.controller.bulkAdd(controllerDParams, controllerAParams, { ...txOptions, from: owner })
+    return receipt.transactionHash
   }
 }
 
