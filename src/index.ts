@@ -156,13 +156,13 @@ export class EthrDID {
 
     // console.log('ethr-did controller = ', this.controller)
 
-    console.log('txOptions = ', txOptions)
+    // console.log('txOptions = ', txOptions)
 
     const receipt = await this.controller.changeOwner(newOwner, {
       ...txOptions,
       from: owner,
     })
-    console.log('txResult = ', receipt)
+    // console.log('txResult = ', receipt)
 
     this.owner = newOwner
     return receipt.transactionHash
@@ -248,7 +248,7 @@ export class EthrDID {
       ...txOptions,
       from: owner,
     })
-    console.log('Ethr-DID : Nonce = ', receipt)
+    // console.log('Ethr-DID : Nonce = ', receipt)
     return receipt
   }
 
