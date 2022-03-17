@@ -34,7 +34,7 @@ describe('EthrDID', () => {
   // Contract address deployed
   // bulkAdd with 2 param
   // const registry = '0x258A75E9DF2F3BfB8b0854A7A7003044B3d94e0E'
-  const registry = '0x5Ed257A2BD6FABDD6CF9EceeCCE6c0Aa97d407a4'
+  const registry = '0x713A5Db664297195061b9558f40e88434cb79C77'
 
   // Wallet addresses
   const delegate1 = '0x01298a7ec3e153dac8d0498ea9b40d3a40b51900'
@@ -46,7 +46,7 @@ describe('EthrDID', () => {
     txSigner: Wallet
 
   // Data for Signing Transaction
-  const privateKey = arrayify('0xa285ab66393c5fdda46d6fbad9e27fafd438254ab72ad5acb681a0e9f20f5d7b')
+  const signerPrivateKey = arrayify('0xa285ab66393c5fdda46d6fbad9e27fafd438254ab72ad5acb681a0e9f20f5d7b')
   const signerAddress = '0x2036C6CD85692F0Fb2C26E6c6B2ECed9e4478Dfd'
 
   // Function to sign data
@@ -112,6 +112,24 @@ describe('EthrDID', () => {
       doc = await didResolver.resolve(ethrDid.did)
     })
 
+    /*
+    // Simple test: Working 
+    it('addDelegate',async () => {
+      const startTime = Date.now()
+      console.log('Start : ', startTime)
+
+      const txHash = await ethrDid.addDelegate(
+        delegate1
+      )
+      await provider.waitForTransaction(txHash)
+
+      const endTime = Date.now()
+      console.log('End : ', endTime)
+  
+      console.log('Time Consumed: ', endTime - startTime)
+    })
+    */
+
     it ('bulkAdd test', async () => {
       // Verification Method
       const dParams : BulkDelegateParam[] = []
@@ -168,7 +186,7 @@ describe('EthrDID', () => {
 
       const sig = await signData(
         signerAddress,
-        privateKey,
+        signerPrivateKey,
         concat([
           toUtf8Bytes('addDelegate'),
           formatBytes32String('attestor'),
@@ -194,7 +212,7 @@ describe('EthrDID', () => {
       const sig2 = await signData(
         signerAddress,
         // signerAddress,
-        privateKey,
+        signerPrivateKey,
         concat([
           toUtf8Bytes('setAttribute'),
           formatBytes32String('encryptionKey'),
@@ -205,15 +223,15 @@ describe('EthrDID', () => {
       )
 
       const signedAParams : BulkSignedAttributeParam[] = [
-        // {
-        //   identity: signerAddress,
-        //   sigV: sig2.v,
-        //   sigR: sig2.r,
-        //   sigS: sig2.s,
-        //   name: formatBytes32String('encryptionKey'),
-        //   value: toUtf8Bytes('mykey'),
-        //   validity: 86400,
-        // }
+        {
+          identity: signerAddress,
+          sigV: sig2.v,
+          sigR: sig2.r,
+          sigS: sig2.s,
+          name: formatBytes32String('encryptionKey'),
+          value: toUtf8Bytes('mykey'),
+          validity: 86400,
+        }
       ]
 
       
