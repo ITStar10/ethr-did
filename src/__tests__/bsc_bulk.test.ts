@@ -93,9 +93,12 @@ describe('EthrDID', () => {
   })
   */
 
-  describe('bulkAdd', () => {
+  describe('bulk Transactions', () => {
     // let didResolver,
     let doc
+
+    const dParams: BulkDelegateParam[] = []
+    const aParams: BulkAttributeParam[] = []
 
     beforeAll(async () => {
       const providerConfig = { 
@@ -110,6 +113,52 @@ describe('EthrDID', () => {
       const didResolver = new Resolver(ethrDidResolver)
 
       doc = await didResolver.resolve(ethrDid.did)
+
+      // Add Test datas to add & revoke
+      // Verification Method
+      // Add keyagreement
+      dParams.push(
+        {
+          delegate: delegate1,
+          delegateType: DelegateTypes.enc,
+        }
+      )
+      /*
+      dParams.push(
+      // Verification method
+      {
+        // delegateType: = DelegateTypes.veriKey // By default
+        delegate: delegate1,
+        // expiresIn: = 86400 // By default
+      }, 
+      // Authentication method
+      {
+        delegateType: DelegateTypes.sigAuth,
+        delegate: delegate1
+      })
+      */
+
+      const context = '0x84e5fb4eb5c3f53d8506e7085dfbb0ef333c5f7d0769bcaf4ca2dc0ca4698fd4'
+      aParams.push(
+        // Service
+        {
+          name: 'did/svc/VeridaDatabase',
+          value: 'https://db.testnet.verida.io:5002##' + context + '##database'
+          // expiresIn? 
+        },{
+          name: 'did/svc/VeridaMessage',
+          value: 'https://db.testnet.verida.io:5002##' + context + '##messaging'
+        },{
+          name: 'did/svc/VeridaNotification',
+          value: 'https://notification.testnet.verida.io:5002##' + context + '##notification'
+        },{
+          name: 'did/svc/VeridaStorage',
+          value: 'https://storage.testnet.verida.io:5002##' + context + '##storage'
+        },{
+          name: 'did/svc/BlockchainAddress',
+          value: '0x01298a7ec3e153dac8d0498ea9b40d3a40b51900##' + context + '##ethereum:eip155-1'
+        },
+      )
     })
 
     /*
@@ -131,57 +180,6 @@ describe('EthrDID', () => {
     */
 
     it ('bulkAdd test', async () => {
-      // Verification Method
-      const dParams : BulkDelegateParam[] = []
-      // Add keyagreement
-      dParams.push(
-        {
-          delegate: delegate1,
-          delegateType: DelegateTypes.enc,
-        }
-      )
-
-      /*
-      dParams.push(
-      // Verification method
-      {
-        // delegateType: = DelegateTypes.veriKey // By default
-        delegate: delegate1,
-        // expiresIn: = 86400 // By default
-      }, 
-      // Authentication method
-      {
-        delegateType: DelegateTypes.sigAuth,
-        delegate: delegate1
-      })
-      */
-
-      const context = '0x84e5fb4eb5c3f53d8506e7085dfbb0ef333c5f7d0769bcaf4ca2dc0ca4698fd4'
-
-      const aParams: BulkAttributeParam[] = []
-      
-      aParams.push(
-        // Service
-        {
-          name: 'did/svc/VeridaDatabase',
-          value: 'https://db.testnet.verida.io:5002##' + context + '##database'
-          // expiresIn? 
-        },{
-          name: 'did/svc/VeridaMessage',
-          value: 'https://db.testnet.verida.io:5002##' + context + '##messaging'
-        },{
-          name: 'did/svc/VeridaNotification',
-          value: 'https://notification.testnet.verida.io:5002##' + context + '##notification'
-        },{
-          name: 'did/svc/VeridaStorage',
-          value: 'https://storage.testnet.verida.io:5002##' + context + '##storage'
-        },{
-          name: 'did/svc/BlockchainAddress',
-          value: '0x01298a7ec3e153dac8d0498ea9b40d3a40b51900##' + context + '##ethereum:eip155-1'
-        },
-      )
-      
-
       let nonce = Number(await ethrDid.nonce(signerAddress));
 
       const sig = await signData(
@@ -251,113 +249,82 @@ describe('EthrDID', () => {
   
       console.log('Time Consumed: ', endTime - startTime)
       
-     
       console.log("Result:", doc)
       // console.log(doc.didDocument.verificationMethod)
       // console.log(doc.didDocument.service)
     })
 
-    /*
-    it ('Add verification method - Delegate', async () => {
-      const delegate1 = '0x01298a7ec3e153dac8d0498ea9b40d3a40b51900'
 
-      const txHash = await ethrDid.addDelegate(
-        delegate1,
-        {
-          expiresIn: 86400,
-        });
+    it ('bulkRevoke test', async () => {
+      let nonce = Number(await ethrDid.nonce(signerAddress));
+
+      const sig = await signData(
+        signerAddress,
+        signerPrivateKey,
+        concat([
+          toUtf8Bytes('revokeDelegate'),
+          formatBytes32String('attestor'),
+          delegate1,
+        ]),
+        nonce++
+      )
       
-      await provider.waitForTransaction(txHash)
-    })
-
-    it ('Add verification method', async() => {
-      // Add publicKey
-      const  pubKeyList = [
-        '0xfa83bbb792710e80b7605fe4ac680eb7f070ffadcca31aeb0312df80f7361938',
-        '0x029d3638eff201f684e5a9e0ad79373a1ebe14e1d369c0cea0e1f6914792d1f60e',
-        '0x6a3043320fcff32043e20d75727958e25d3613119058f9be77916c635769dc70',
-        '0x027f68efbb37abae2e3d4ef61f2a7c8e2d74b50db6d57791cd0fe7261abfe07862',
-        '0x83f18992724ea6be59c315f1ea6202ce1ec37bed772e12bab9eff2b64decc074',
+      const signedDParams : BulkSignedDelegateParam[] = [
+        {
+          identity: signerAddress,
+          sigV: sig.v,
+          sigR: sig.r,
+          sigS: sig.s,
+          delegateType: formatBytes32String('attestor'),
+          delegate: delegate1,
+        }
       ]
 
-      for (const key in pubKeyList) {
-        const txHash = await ethrDid.setAttribute(
-          'did/pub/Secp256k1/veriKey',
-          key,
-          86400
-        )
-        await provider.waitForTransaction(txHash)
-      }
 
-      // const txHash = await ethrDid.setAttribute(
-      //   'did/pub/Secp256k1/veriKey',
-      //   '0x83f18992724ea6be59c315f1ea6202ce1ec37bed772e12bab9eff2b64decc074',
-      //   86400
-      // )
-      // await provider.waitForTransaction(txHash)
-
-      console.log(doc)
-
-      console.log(doc.didDocument.verificationMethod)
-    })
-
-    it('Add multiple service by for loop',async () => {
-      const keyList = [
-        'did/svc/VeridaMessage',
-        'did/svc/VeridaDatabase',
-      ]
-
-      const contextList = [
-        '0x84e5fb4eb5c3f53d8506e7085dfbb0ef333c5f7d0769bcaf4ca2dc0ca4698fd4',
-        '0xcfbf4621af64386c92c0badd0aa3ae3877a6ea6e298dfa54aa6b1ebe00769b28',
-        '0x55418c45e3ad1ba47c69f266d6c49c589b9d70de837e318c78ff43c7f0ba89c8'
-      ]
-
-      const serviceEndPoint = 'https://db.testnet.verida.io:5002'
-
-      for (const context in contextList) {
-        const msgHash = await ethrDid.setAttribute(
-          keyList[0], 
-          serviceEndPoint + '##' + context + '##messaging', 
-          86400
-        )
-        await provider.waitForTransaction(msgHash)
-    
-        const txHash = await ethrDid.setAttribute(
-          keyList[1],
-          serviceEndPoint + '##' + context + '##database',
-          86400
-        )
-        await provider.waitForTransaction(txHash)
-      }  
-
-      // console.log(doc)
-      // console.log(doc.didDocument.verificationMethod)
-      console.log(doc.didDocument.service)
-    })
-
-    it('Time measure for adding service', async () => {
-      const msgHash = await ethrDid.setAttribute(
-        'did/svc/VeridaMessage', 
-        'https://db.testnet.verida.io:5002##0x84e5fb4eb5c3f53d8506e7085dfbb0ef333c5f7d0769bcaf4ca2dc0ca4600003##messaging', 
-        86400
+      const sig2 = await signData(
+        signerAddress,
+        // signerAddress,
+        signerPrivateKey,
+        concat([
+          toUtf8Bytes('revokeAttribute'),
+          formatBytes32String('encryptionKey'),
+          toUtf8Bytes('mykey'),
+        ]),
+        nonce++
       )
-      await provider.waitForTransaction(msgHash)
-  
+
+      const signedAParams : BulkSignedAttributeParam[] = [
+        {
+          identity: signerAddress,
+          sigV: sig2.v,
+          sigR: sig2.r,
+          sigS: sig2.s,
+          name: formatBytes32String('encryptionKey'),
+          value: toUtf8Bytes('mykey'),
+        }
+      ]
+
+      
       const startTime = Date.now()
-      console.log('Start : ', startTime)
-      const txHash = await ethrDid.setAttribute(
-        'did/svc/VeridaDatabase',
-        'https://db.testnet.verida.io:5002##0x84e5fb4eb5c3f53d8506e7085dfbb0ef333c5f7d0769bcaf4ca2dc0ca4600004##database',
-        86400
+      console.log('Revoke Start : ', startTime)
+
+      const txHash = await ethrDid.bulkRevoke(
+        dParams,
+        aParams,
+        signedDParams,
+        signedAParams
       )
       await provider.waitForTransaction(txHash)
+
       const endTime = Date.now()
-      console.log('End : ', endTime)
+      console.log('Revoke End : ', endTime)
   
-      console.log('Time Consumed: ', endTime - startTime)
+      console.log('Revoke Time Consumed: ', endTime - startTime)
+      
+      console.log("Revoke Result:", doc)
+      // console.log(doc.didDocument.verificationMethod)
+      // console.log(doc.didDocument.service)
     })
-    */
   })
 
   

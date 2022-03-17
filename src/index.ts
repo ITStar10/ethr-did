@@ -341,6 +341,54 @@ export class EthrDID {
     )
     return receipt.transactionHash
   }
+
+  async bulkRevoke(
+    delegateParams: BulkDelegateParam[],
+    attributeParams: BulkAttributeParam[],
+    signedDelegateParams: BulkSignedDelegateParam[],
+    signedAttributeParams: BulkSignedAttributeParam[],
+    /** @deprecated, please use txOptions.gasLimit */
+    gasLimit?: number,
+    txOptions: CallOverrides = {}
+  ): Promise<string> {
+    if (typeof this.controller === 'undefined') {
+      throw new Error('a web3 provider configuration is needed for network operations')
+    }
+
+    const controllerDParams = delegateParams.map((item) => {
+      return {
+        delegateType: item.delegateType ?? DelegateTypes.veriKey,
+        delegate: item.delegate,
+      }
+    })
+
+    const controllerAParams = attributeParams.map((item) => {
+      return {
+        name: item.name,
+        value: attributeToHex(item.name, item.value),
+      }
+    })
+
+    const controllerSignedDParams = signedDelegateParams.map((item) => {
+      delete item.validity
+      return item
+    })
+
+    const controllerSignedAParams = signedAttributeParams.map((item) => {
+      delete item.validity
+      return item
+    })
+
+    const owner = await this.lookupOwner()
+    const receipt = await this.controller.bulkRevoke(
+      controllerDParams,
+      controllerAParams,
+      controllerSignedDParams,
+      controllerSignedAParams,
+      { ...txOptions, from: owner }
+    )
+    return receipt.transactionHash
+  }
 }
 
 function attributeToHex(key: string, value: string | Uint8Array): string {
