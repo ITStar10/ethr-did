@@ -161,7 +161,7 @@ describe('EthrDID', () => {
       )
     })
 
-    /*
+    
     // Simple test: Working 
     it('addDelegate',async () => {
       const startTime = Date.now()
@@ -177,7 +177,7 @@ describe('EthrDID', () => {
   
       console.log('Time Consumed: ', endTime - startTime)
     })
-    */
+    
 
     it ('bulkAdd test', async () => {
       let nonce = Number(await ethrDid.nonce(signerAddress));

@@ -29,7 +29,8 @@ jest.setTimeout(600000)
 
 describe('EthrDID', () => {
 
-  const rpcUrl = 'https://polygon-rpc.com/'
+  // const rpcUrl = 'https://polygon-rpc.com/'
+  const rpcUrl = 'https://polygon-mainnet.g.alchemy.com/v2/JT3kfJ7hivnlA2dtPNpw3ahJCjhW26EV'
 
   // Contract address deployed
   // bulkAdd with 2 param
@@ -158,7 +159,6 @@ describe('EthrDID', () => {
       )
     })
 
-    /*
     // Simple test: Working 
     it('addDelegate',async () => {
       const startTime = Date.now()
@@ -174,7 +174,6 @@ describe('EthrDID', () => {
   
       console.log('Time Consumed: ', endTime - startTime)
     })
-    */
    
     it ('bulkAdd test', async () => {
       let nonce = Number(await ethrDid.nonce(signerAddress));
@@ -246,7 +245,7 @@ describe('EthrDID', () => {
   
       console.log('Time Consumed: ', endTime - startTime)
       
-      console.log("Result:", doc)
+      // console.log("Result:", doc)
       // console.log(doc.didDocument.verificationMethod)
       // console.log(doc.didDocument.service)
     })
@@ -318,7 +317,7 @@ describe('EthrDID', () => {
   
       console.log('Revoke Time Consumed: ', endTime - startTime)
       
-      console.log("Revoke Result:", doc)
+      // console.log("Revoke Result:", doc)
       // console.log(doc.didDocument.verificationMethod)
       // console.log(doc.didDocument.service)
     })
