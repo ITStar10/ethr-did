@@ -29,8 +29,8 @@ jest.setTimeout(600000)
 
 describe('EthrDID', () => {
 
-  // const rpcUrl = 'https://polygon-rpc.com/'
-  const rpcUrl = 'https://polygon-mainnet.g.alchemy.com/v2/JT3kfJ7hivnlA2dtPNpw3ahJCjhW26EV'
+  const rpcUrl = 'https://polygon-rpc.com/'
+  // const rpcUrl = 'https://polygon-mainnet.g.alchemy.com/v2/JT3kfJ7hivnlA2dtPNpw3ahJCjhW26EV'
 
   // Contract address deployed
   // bulkAdd with 2 param
@@ -172,7 +172,7 @@ describe('EthrDID', () => {
       const endTime = Date.now()
       console.log('End : ', endTime)
   
-      console.log('Time Consumed: ', endTime - startTime)
+      console.log('addDelegate() Time Consumed: ', endTime - startTime)
     })
    
     it ('bulkAdd test', async () => {
@@ -243,7 +243,7 @@ describe('EthrDID', () => {
       const endTime = Date.now()
       console.log('End : ', endTime)
   
-      console.log('Time Consumed: ', endTime - startTime)
+      console.log('bulkAdd() Time Consumed: ', endTime - startTime)
       
       // console.log("Result:", doc)
       // console.log(doc.didDocument.verificationMethod)
@@ -315,7 +315,7 @@ describe('EthrDID', () => {
       const endTime = Date.now()
       console.log('Revoke End : ', endTime)
   
-      console.log('Revoke Time Consumed: ', endTime - startTime)
+      console.log('bulkRevoke() Revoke Time Consumed: ', endTime - startTime)
       
       // console.log("Revoke Result:", doc)
       // console.log(doc.didDocument.verificationMethod)

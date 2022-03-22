@@ -238,20 +238,6 @@ export class EthrDID {
     return receipt.transactionHash
   }
 
-  async nonce(signer: string, gasLimit?: number, txOptions: CallOverrides = {}): Promise<BigInt> {
-    if (typeof this.controller === 'undefined') {
-      throw new Error('a web3 provider configuration is needed for network operations')
-    }
-    const owner = await this.lookupOwner()
-    const receipt = await this.controller.nonce(signer, {
-      gasLimit,
-      ...txOptions,
-      from: owner,
-    })
-    // console.log('Ethr-DID : Nonce = ', receipt)
-    return receipt
-  }
-
   // Create a temporary signing delegate able to sign JWT on behalf of identity
   async createSigningDelegate(
     delegateType = DelegateTypes.veriKey,
@@ -283,6 +269,20 @@ export class EthrDID {
 
   async verifyJWT(jwt: string, resolver: Resolvable, audience = this.did): Promise<JWTVerified> {
     return verifyJWT(jwt, { resolver, audience })
+  }
+
+  async nonce(signer: string, gasLimit?: number, txOptions: CallOverrides = {}): Promise<BigInt> {
+    if (typeof this.controller === 'undefined') {
+      throw new Error('a web3 provider configuration is needed for network operations')
+    }
+    const owner = await this.lookupOwner()
+    const receipt = await this.controller.nonce(signer, {
+      gasLimit,
+      ...txOptions,
+      from: owner,
+    })
+    // console.log('Ethr-DID : Nonce = ', receipt)
+    return receipt.toBigInt()
   }
 
   // Newly Added

@@ -247,9 +247,9 @@ describe('EthrDID', () => {
       const endTime = Date.now()
       console.log('End : ', endTime)
   
-      console.log('Time Consumed: ', endTime - startTime)
+      console.log('bulkAdd() Time Consumed: ', endTime - startTime)
       
-      console.log("Result:", doc)
+      // console.log("Result:", doc)
       // console.log(doc.didDocument.verificationMethod)
       // console.log(doc.didDocument.service)
     })
@@ -319,9 +319,9 @@ describe('EthrDID', () => {
       const endTime = Date.now()
       console.log('Revoke End : ', endTime)
   
-      console.log('Revoke Time Consumed: ', endTime - startTime)
+      console.log('bulkRevoke() Revoke Time Consumed: ', endTime - startTime)
       
-      console.log("Revoke Result:", doc)
+      // console.log("Revoke Result:", doc)
       // console.log(doc.didDocument.verificationMethod)
       // console.log(doc.didDocument.service)
     })
