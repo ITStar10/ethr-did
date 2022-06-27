@@ -11,7 +11,7 @@ import { createProvider, sleep } from './testUtils'
 import DidRegistryContract from 'ethr-did-registry'
 import { verifyJWT } from 'did-jwt'
 
-import { privateKey } from '/mnt/Work/Sec/mainnet_secret.json'
+import { privateKey } from '/mnt/Work/Sec/test.json'
 
 jest.setTimeout(600000)
 
