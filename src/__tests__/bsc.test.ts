@@ -4,24 +4,24 @@ import { Contract, ContractFactory } from '@ethersproject/contracts'
 import { InfuraProvider, JsonRpcProvider, Web3Provider } from '@ethersproject/providers'
 import { Wallet } from '@ethersproject/wallet'
 // import { getResolver } from 'ethr-did-resolver'
-import { getResolver } from 'ethr-did-resolver'
+import { getResolver } from 'vda-did-resolver'
 
-import { EthrDID, DelegateTypes, KeyPair } from '../index'
+import { VdaDID, DelegateTypes, KeyPair } from '../index'
 import { createProvider, sleep } from './testUtils'
 import DidRegistryContract from 'ethr-did-registry'
 import { verifyJWT } from 'did-jwt'
 
-import { privateKey } from '/mnt/Work/Sec/mainnet_secret.json'
+import { privateKey } from '/mnt/Work/Sec/test.json'
 
 jest.setTimeout(600000)
 
-describe('EthrDID', () => {
+describe('VdaDID', () => {
 
   const rpcUrl = 'https://speedy-nodes-nyc.moralis.io/bd1c39d7c8ee1229b16b4a97/bsc/testnet'
 
-  const registry = '0xDB06192CEdBc3a246D59883A6945ae7CDF02E807'
+  const registry = '0x2862BC860f55D389bFBd1A37477651bc1642A20B'
 
-  let ethrDid: EthrDID,
+  let vdaDid: VdaDID,
     identity: string,
     owner: string,
     
@@ -38,29 +38,28 @@ describe('EthrDID', () => {
 
     txSigner = new Wallet(privateKey, provider)
     
-    ethrDid = new EthrDID({
-      // privateKey,
-      txSigner,
-
-      provider,
-      
+    
+    vdaDid = new VdaDID({
       identifier: identity,
-      chainNameOrId : '0x61',
-
-      rpcUrl,
-      registry,
+      chainNameOrId : '0x61',     
+      
+      callType: 'web3',
+      web3Options: {
+        provider: provider,
+        account: txSigner.address
+      }
     })
   })
 
   /*
   it('defaults owner to itself', async () => {
-    const prevOwner = await ethrDid.lookupOwner()
+    const prevOwner = await vdaDid.lookupOwner()
     console.log('Prev Owner = ', prevOwner)
     
     // Don't test continuously. Require private key
-    await ethrDid.changeOwner(owner)
+    await vdaDid.changeOwner(owner)
 
-    const newOwner = await ethrDid.lookupOwner()
+    const newOwner = await vdaDid.lookupOwner()
     console.log('New Owner = ', newOwner)
 
   })
@@ -79,16 +78,18 @@ describe('EthrDID', () => {
         provider,
         txSigner,
       }
-      const ethrDidResolver = getResolver(providerConfig)
-      const didResolver = new Resolver(ethrDidResolver)
+      const vdaDidResolver = getResolver(providerConfig)
+      const didResolver = new Resolver(vdaDidResolver)
 
-      doc = await didResolver.resolve(ethrDid.did)
+      doc = await didResolver.resolve(vdaDid.did)
+
+      console.log("###################Resolved Doc###########", doc)
     })
 
     it ('Add verification method - Delegate', async () => {
       const delegate1 = '0x01298a7ec3e153dac8d0498ea9b40d3a40b51900'
 
-      const txHash = await ethrDid.addDelegate(
+      const txHash = await vdaDid.addDelegate(
         delegate1,
         {
           expiresIn: 86400,
@@ -97,6 +98,7 @@ describe('EthrDID', () => {
       await provider.waitForTransaction(txHash)
     })
 
+    /*
     it ('Add verification method', async() => {
       // Add publicKey
       const  pubKeyList = [
@@ -108,7 +110,7 @@ describe('EthrDID', () => {
       ]
 
       for (const key in pubKeyList) {
-        const txHash = await ethrDid.setAttribute(
+        const txHash = await vdaDid.setAttribute(
           'did/pub/Secp256k1/veriKey',
           key,
           86400
@@ -116,7 +118,7 @@ describe('EthrDID', () => {
         await provider.waitForTransaction(txHash)
       }
 
-      // const txHash = await ethrDid.setAttribute(
+      // const txHash = await vdaDid.setAttribute(
       //   'did/pub/Secp256k1/veriKey',
       //   '0x83f18992724ea6be59c315f1ea6202ce1ec37bed772e12bab9eff2b64decc074',
       //   86400
@@ -143,14 +145,14 @@ describe('EthrDID', () => {
       const serviceEndPoint = 'https://db.testnet.verida.io:5002'
 
       for (const context in contextList) {
-        const msgHash = await ethrDid.setAttribute(
+        const msgHash = await vdaDid.setAttribute(
           keyList[0], 
           serviceEndPoint + '##' + context + '##messaging', 
           86400
         )
         await provider.waitForTransaction(msgHash)
     
-        const txHash = await ethrDid.setAttribute(
+        const txHash = await vdaDid.setAttribute(
           keyList[1],
           serviceEndPoint + '##' + context + '##database',
           86400
@@ -164,7 +166,7 @@ describe('EthrDID', () => {
     })
 
     it('Time measure for adding service', async () => {
-      const msgHash = await ethrDid.setAttribute(
+      const msgHash = await vdaDid.setAttribute(
         'did/svc/VeridaMessage', 
         'https://db.testnet.verida.io:5002##0x84e5fb4eb5c3f53d8506e7085dfbb0ef333c5f7d0769bcaf4ca2dc0ca4600003##messaging', 
         86400
@@ -173,7 +175,7 @@ describe('EthrDID', () => {
   
       const startTime = Date.now()
       console.log('Start : ', startTime)
-      const txHash = await ethrDid.setAttribute(
+      const txHash = await vdaDid.setAttribute(
         'did/svc/VeridaDatabase',
         'https://db.testnet.verida.io:5002##0x84e5fb4eb5c3f53d8506e7085dfbb0ef333c5f7d0769bcaf4ca2dc0ca4600004##database',
         86400
@@ -184,15 +186,16 @@ describe('EthrDID', () => {
   
       console.log('Time Consumed: ', endTime - startTime)
     })
+    */
   })
 
   
 
 //   describe('key management', () => {
 //     it('test', async () => {
-//       await ethrDid.changeOwner(owner)
-//     //   console.log('Return = ', await ethrDid.lookupOwner())
-//     //   return expect(ethrDid.lookupOwner()).resolves.toEqual(owner)
+//       await vdaDid.changeOwner(owner)
+//     //   console.log('Return = ', await vdaDid.lookupOwner())
+//     //   return expect(vdaDid.lookupOwner()).resolves.toEqual(owner)
 //     })
 //   })
   

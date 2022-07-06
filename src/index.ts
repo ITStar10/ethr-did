@@ -9,8 +9,10 @@ import * as base64 from '@ethersproject/base64'
 import { hexlify, hexValue, isBytes } from '@ethersproject/bytes'
 import { Base58 } from '@ethersproject/basex'
 import { toUtf8Bytes } from '@ethersproject/strings'
-import { EthrDidController, interpretIdentifier, REGISTRY } from 'ethr-did-resolver'
+import { interpretIdentifier, REGISTRY, VdaDidController } from 'vda-did-resolver'
 import { Resolvable } from 'did-resolver'
+
+import { CallType, VeridaWeb3ConfigurationOption } from 'vda-did-resolver'
 
 export enum DelegateTypes {
   veriKey = 'veriKey',
@@ -22,17 +24,15 @@ interface IConfig {
   identifier: string
   chainNameOrId?: string | number
 
-  registry?: string
+  callType: CallType
+  web3Options: VeridaWeb3ConfigurationOption
 
-  signer?: JWTSigner
-  alg?: 'ES256K' | 'ES256K-R'
-  txSigner?: TxSigner
-  privateKey?: string
+  // txSigner?: TxSigner
+  // privateKey?: string
 
-  rpcUrl?: string
-  provider?: Provider
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  web3?: any
+  // provider?: Provider
+  // // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // web3?: any
 }
 
 export type KeyPair = {
@@ -53,81 +53,65 @@ export type BulkDelegateParam = {
   validity?: number
 }
 
-export type BulkSignedDelegateParam = {
-  identity: string
-  sigV: number
-  sigR: string
-  sigS: string
-  delegateType: string
-  delegate: string
-  validity?: number
-}
-
 export type BulkAttributeParam = {
   name: string
   value: string | Uint8Array
   validity?: number
 }
 
-export type BulkSignedAttributeParam = {
-  identity: string
-  sigV: number
-  sigR: string
-  sigS: string
-  name: string
-  value: string | Uint8Array
-  validity?: number
-}
-
-export class EthrDID {
+export class VdaDID {
   public did: string
   public address: string
   public signer?: JWTSigner
   public alg?: 'ES256K' | 'ES256K-R'
   private owner?: string
-  private controller?: EthrDidController
+  private controller?: VdaDidController
 
   constructor(conf: IConfig) {
     const { address, publicKey, network } = interpretIdentifier(conf.identifier)
-    const chainNameOrId = typeof conf.chainNameOrId === 'number' ? hexValue(conf.chainNameOrId) : conf.chainNameOrId
-    if (conf.provider || conf.rpcUrl || conf.web3) {
-      let txSigner = conf.txSigner
-      if (conf.privateKey && typeof txSigner === 'undefined') {
-        txSigner = new Wallet(conf.privateKey)
-      }
-      this.controller = new EthrDidController(
-        conf.identifier,
-        undefined,
-        txSigner,
-        chainNameOrId,
-        conf.provider || conf.web3?.currentProvider,
-        conf.rpcUrl,
-        conf.registry || REGISTRY
-      )
-      this.did = this.controller.did
-      // console.log('EthrDID class -> EthrDID controller = ', this.controller)
-    } else {
-      const net = network || chainNameOrId
-      let networkString = net ? `${net}:` : ''
-      if (networkString in ['mainnet:', '0x1:']) {
-        networkString = ''
-      }
-      this.did =
-        typeof publicKey === 'string' ? `did:ethr:${networkString}${publicKey}` : `did:ethr:${networkString}${address}`
-    }
+
+    this.controller = new VdaDidController(conf.callType, conf.web3Options, conf.identifier, conf.chainNameOrId)
+    this.did = this.controller.did
+
+    // if (conf.provider || conf.web3) {
+    //   let txSigner = conf.txSigner
+    //   if (conf.privateKey && typeof txSigner === 'undefined') {
+    //     txSigner = new Wallet(conf.privateKey)
+    //   }
+    //   this.controller = new VdaDidController(
+    //     conf.identifier,
+    //     undefined,
+    //     txSigner,
+    //     chainNameOrId,
+    //     conf.provider || conf.web3?.currentProvider,
+    //     conf.rpcUrl,
+    //     conf.registry || REGISTRY
+    //   )
+    //   this.did = this.controller.did
+    //   // console.log('EthrDID class -> EthrDID controller = ', this.controller)
+    // } else {
+    //   const net = network || chainNameOrId
+    //   let networkString = net ? `${net}:` : ''
+    //   if (networkString in ['mainnet:', '0x1:']) {
+    //     networkString = ''
+    //   }
+    //   this.did =
+    //     typeof publicKey === 'string' ? `did:ethr:${networkString}${publicKey}` : `did:ethr:${networkString}${address}`
+    // }
+
     this.address = address
-    if (conf.signer) {
-      this.signer = conf.signer
-      this.alg = conf.alg
-      if (!this.alg) {
-        console.warn(
-          'A JWT signer was specified but no algorithm was set. Please set the `alg` parameter when calling `new EthrDID()`'
-        )
-      }
-    } else if (conf.privateKey) {
-      this.signer = ES256KSigner(conf.privateKey, true)
-      this.alg = 'ES256K-R'
-    }
+    // if (conf.signer) {
+    //   this.signer = conf.signer
+    //   this.alg = conf.alg
+    //   if (!this.alg) {
+    //     console.warn(
+    //       'A JWT signer was specified but no algorithm was set. Please set the `alg` parameter when calling `new EthrDID()`'
+    //     )
+    //   }
+    // } else if (conf.privateKey) {
+    //   this.signer = ES256KSigner(conf.privateKey, true)
+    //   this.alg = 'ES256K-R'
+    // }
   }
 
   static createKeyPair(chainNameOrId?: string | number): KeyPair {
@@ -165,7 +149,7 @@ export class EthrDID {
     // console.log('txResult = ', receipt)
 
     this.owner = newOwner
-    return receipt.transactionHash
+    return receipt.data
   }
 
   async addDelegate(
@@ -183,7 +167,7 @@ export class EthrDID {
       delegateOptions?.expiresIn || 86400,
       { ...txOptions, from: owner }
     )
-    return receipt.transactionHash
+    return receipt.data
   }
 
   async revokeDelegate(
@@ -196,7 +180,7 @@ export class EthrDID {
     }
     const owner = await this.lookupOwner()
     const receipt = await this.controller.revokeDelegate(delegateType, delegate, { ...txOptions, from: owner })
-    return receipt.transactionHash
+    return receipt.data
   }
 
   async setAttribute(
@@ -216,7 +200,7 @@ export class EthrDID {
       ...txOptions,
       from: owner,
     })
-    return receipt.transactionHash
+    return receipt.data
   }
 
   async revokeAttribute(
@@ -235,62 +219,27 @@ export class EthrDID {
       ...txOptions,
       from: owner,
     })
-    return receipt.transactionHash
+    return receipt.data
   }
 
-  // Create a temporary signing delegate able to sign JWT on behalf of identity
-  async createSigningDelegate(
-    delegateType = DelegateTypes.veriKey,
-    expiresIn = 86400
-  ): Promise<{ kp: KeyPair; txHash: string }> {
-    const kp = EthrDID.createKeyPair()
-    this.signer = ES256KSigner(kp.privateKey, true)
-    const txHash = await this.addDelegate(kp.address, {
-      delegateType,
-      expiresIn,
-    })
-    return { kp, txHash }
-  }
-
-  // eslint-disable-next-line
-  async signJWT(payload: any, expiresIn?: number): Promise<string> {
-    if (typeof this.signer !== 'function') {
-      throw new Error('No signer configured')
-    }
-    const options = {
-      signer: this.signer,
-      alg: 'ES256K-R',
-      issuer: this.did,
-    }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (expiresIn) (<any>options)['expiresIn'] = expiresIn
-    return createJWT(payload, options)
-  }
-
-  async verifyJWT(jwt: string, resolver: Resolvable, audience = this.did): Promise<JWTVerified> {
-    return verifyJWT(jwt, { resolver, audience })
-  }
-
-  async nonce(signer: string, gasLimit?: number, txOptions: CallOverrides = {}): Promise<BigInt> {
-    if (typeof this.controller === 'undefined') {
-      throw new Error('a web3 provider configuration is needed for network operations')
-    }
-    const owner = await this.lookupOwner()
-    const receipt = await this.controller.nonce(signer, {
-      gasLimit,
-      ...txOptions,
-      from: owner,
-    })
-    // console.log('Ethr-DID : Nonce = ', receipt)
-    return receipt.toBigInt()
-  }
+  // async nonce(signer: string, gasLimit?: number, txOptions: CallOverrides = {}): Promise<BigInt> {
+  //   if (typeof this.controller === 'undefined') {
+  //     throw new Error('a web3 provider configuration is needed for network operations')
+  //   }
+  //   const owner = await this.lookupOwner()
+  //   const receipt = await this.controller.nonce(signer, {
+  //     gasLimit,
+  //     ...txOptions,
+  //     from: owner,
+  //   })
+  //   // console.log('Ethr-DID : Nonce = ', receipt)
+  //   return receipt.toBigInt()
+  // }
 
   // Newly Added
   async bulkAdd(
     delegateParams: BulkDelegateParam[],
     attributeParams: BulkAttributeParam[],
-    signedDelegateParams: BulkSignedDelegateParam[],
-    signedAttributeParams: BulkSignedAttributeParam[],
     /** @deprecated, please use txOptions.gasLimit */
     gasLimit?: number,
     txOptions: CallOverrides = {}
@@ -315,38 +264,14 @@ export class EthrDID {
       }
     })
 
-    const controllerSignedDParams = signedDelegateParams.map((item) => {
-      return {
-        ...item,
-        // delegateType: item.delegateType ?? DelegateTypes.veriKey,
-        validity: item.validity ?? 86400,
-      }
-    })
-
-    const controllerSignedAParams = signedAttributeParams.map((item) => {
-      return {
-        ...item,
-        // value: attributeToHex(item.name, item.value),
-        validity: item.validity ?? 86400,
-      }
-    })
-
     const owner = await this.lookupOwner()
-    const receipt = await this.controller.bulkAdd(
-      controllerDParams,
-      controllerAParams,
-      controllerSignedDParams,
-      controllerSignedAParams,
-      { ...txOptions, from: owner }
-    )
-    return receipt.transactionHash
+    const receipt = await this.controller.bulkAdd(controllerDParams, controllerAParams, { ...txOptions, from: owner })
+    return receipt.data
   }
 
   async bulkRevoke(
     delegateParams: BulkDelegateParam[],
     attributeParams: BulkAttributeParam[],
-    signedDelegateParams: BulkSignedDelegateParam[],
-    signedAttributeParams: BulkSignedAttributeParam[],
     /** @deprecated, please use txOptions.gasLimit */
     gasLimit?: number,
     txOptions: CallOverrides = {}
@@ -369,25 +294,12 @@ export class EthrDID {
       }
     })
 
-    const controllerSignedDParams = signedDelegateParams.map((item) => {
-      delete item.validity
-      return item
-    })
-
-    const controllerSignedAParams = signedAttributeParams.map((item) => {
-      delete item.validity
-      return item
-    })
-
     const owner = await this.lookupOwner()
-    const receipt = await this.controller.bulkRevoke(
-      controllerDParams,
-      controllerAParams,
-      controllerSignedDParams,
-      controllerSignedAParams,
-      { ...txOptions, from: owner }
-    )
-    return receipt.transactionHash
+    const receipt = await this.controller.bulkRevoke(controllerDParams, controllerAParams, {
+      ...txOptions,
+      from: owner,
+    })
+    return receipt.data
   }
 }
 
