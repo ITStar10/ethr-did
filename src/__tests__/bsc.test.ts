@@ -11,6 +11,9 @@ import { createProvider, sleep } from './testUtils'
 import DidRegistryContract from 'ethr-did-registry'
 import { verifyJWT } from 'did-jwt'
 
+const HDWalletProvider = require("@truffle/hdwallet-provider");
+
+
 import { privateKey } from '/mnt/Work/Sec/test.json'
 
 jest.setTimeout(600000)
@@ -25,7 +28,7 @@ describe('VdaDID', () => {
     identity: string,
     owner: string,
     
-    provider: JsonRpcProvider,
+    provider: any,
     txSigner: Wallet
 
   beforeAll(async () => {
@@ -37,8 +40,7 @@ describe('VdaDID', () => {
     provider = new JsonRpcProvider(rpcUrl);
 
     txSigner = new Wallet(privateKey, provider)
-    
-    
+        
     vdaDid = new VdaDID({
       identifier: identity,
       chainNameOrId : '0x61',     
@@ -46,9 +48,26 @@ describe('VdaDID', () => {
       callType: 'web3',
       web3Options: {
         provider: provider,
-        account: txSigner.address
+        signer: txSigner
       }
     })
+
+    /*
+    const writeProvider = new HDWalletProvider(
+      privateKey, 
+      rpcUrl
+    )
+        
+    vdaDid = new VdaDID({
+      identifier: identity,
+      chainNameOrId : '0x61',     
+      
+      callType: 'web3',
+      web3Options: {
+        provider: writeProvider,
+        account: txSigner.address
+      }
+    })*/
   })
 
   /*
@@ -89,16 +108,17 @@ describe('VdaDID', () => {
     it ('Add verification method - Delegate', async () => {
       const delegate1 = '0x01298a7ec3e153dac8d0498ea9b40d3a40b51900'
 
-      const txHash = await vdaDid.addDelegate(
+      const txHash = vdaDid.addDelegate(
         delegate1,
         {
           expiresIn: 86400,
         });
+
+      console.log('TxHash -- ', txHash)
       
-      await provider.waitForTransaction(txHash)
+      // await provider.waitForTransaction(txHash)
     })
 
-    /*
     it ('Add verification method', async() => {
       // Add publicKey
       const  pubKeyList = [
@@ -115,7 +135,7 @@ describe('VdaDID', () => {
           key,
           86400
         )
-        await provider.waitForTransaction(txHash)
+        // await provider.waitForTransaction(txHash)
       }
 
       // const txHash = await vdaDid.setAttribute(
@@ -130,6 +150,7 @@ describe('VdaDID', () => {
       console.log(doc.didDocument.verificationMethod)
     })
 
+    /*
     it('Add multiple service by for loop',async () => {
       const keyList = [
         'did/svc/VeridaMessage',
@@ -157,7 +178,7 @@ describe('VdaDID', () => {
           serviceEndPoint + '##' + context + '##database',
           86400
         )
-        await provider.waitForTransaction(txHash)
+        // await provider.waitForTransaction(txHash)
       }  
 
       // console.log(doc)

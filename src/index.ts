@@ -73,32 +73,6 @@ export class VdaDID {
     this.controller = new VdaDidController(conf.callType, conf.web3Options, conf.identifier, conf.chainNameOrId)
     this.did = this.controller.did
 
-    // if (conf.provider || conf.web3) {
-    //   let txSigner = conf.txSigner
-    //   if (conf.privateKey && typeof txSigner === 'undefined') {
-    //     txSigner = new Wallet(conf.privateKey)
-    //   }
-    //   this.controller = new VdaDidController(
-    //     conf.identifier,
-    //     undefined,
-    //     txSigner,
-    //     chainNameOrId,
-    //     conf.provider || conf.web3?.currentProvider,
-    //     conf.rpcUrl,
-    //     conf.registry || REGISTRY
-    //   )
-    //   this.did = this.controller.did
-    //   // console.log('EthrDID class -> EthrDID controller = ', this.controller)
-    // } else {
-    //   const net = network || chainNameOrId
-    //   let networkString = net ? `${net}:` : ''
-    //   if (networkString in ['mainnet:', '0x1:']) {
-    //     networkString = ''
-    //   }
-    //   this.did =
-    //     typeof publicKey === 'string' ? `did:ethr:${networkString}${publicKey}` : `did:ethr:${networkString}${address}`
-    // }
-
     this.address = address
     // if (conf.signer) {
     //   this.signer = conf.signer
