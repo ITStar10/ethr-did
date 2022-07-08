@@ -1,6 +1,6 @@
 {
-  "name": "ethr-did",
-  "version": "2.2.0",
+  "name": "vda-did",
+  "version": "0.1.1",
   "description": "Create, manage and use did:ethr identifiers",
   "source": "src/index.ts",
   "main": "lib/index.js",
@@ -43,7 +43,7 @@
     ],
     "testEnvironment": "node",
     "testMatch": [
-      "**/__tests__/**/bsc.test.[jt]s"
+      "**/__tests__/**/bsc_gasless.test.[jt]s"
     ]
   },
   "devDependencies": {

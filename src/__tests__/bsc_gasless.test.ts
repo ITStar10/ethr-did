@@ -5,29 +5,40 @@ import { Wallet } from '@ethersproject/wallet'
 import { getResolver } from 'vda-did-resolver'
 
 import { VdaDID, DelegateTypes, KeyPair } from '../index'
-import DidRegistryContract from 'ethr-did-registry'
 import { verifyJWT } from 'did-jwt'
 
 import { privateKey } from '/mnt/Work/Sec/test.json'
 
-const rpcUrl = 'https://speedy-nodes-nyc.moralis.io/bd1c39d7c8ee1229b16b4a97/bsc/testnet'
 const registry = '0x2862BC860f55D389bFBd1A37477651bc1642A20B'
 
 const identity = '0x599b3912A63c98dC774eF3E60282fBdf14cda748'.toLowerCase()
 const owner = identity;
 
+// Resolver params
+const rpcUrl = 'https://speedy-nodes-nyc.moralis.io/bd1c39d7c8ee1229b16b4a97/bsc/testnet'
 const provider = new JsonRpcProvider(rpcUrl);
-
 const txSigner = new Wallet(privateKey, provider)
+
+// Web3 params
+const testSignature = "0x67de2d20880a7d27b71cdcb38817ba95800ca82dff557cedd91b96aacb9062e80b9e0b8cb9614fd61ce364502349e9079c26abaa21890d7bc2f1f6c8ff77f6261c"
     
 const vdaDid = new VdaDID({
   identifier: identity,
   chainNameOrId : '0x61',     
   
-  callType: 'web3',
+  callType: 'gasless',
   web3Options: {
-    provider: provider,
-    signer: txSigner
+    veridaKey: testSignature,
+    serverConfig: {
+      headers: {
+          'context-name' : 'Verida Test'
+      } 
+    },
+    postConfig: {
+        headers: {
+            'user-agent': 'Verida-Vault'
+        }
+    }
   }
 })
 
@@ -58,6 +69,9 @@ describe('VdaDID', () => {
         rpcUrl, 
         registry,
         chainId : 97,
+  
+        provider,
+        txSigner,
       }
       const vdaDidResolver = getResolver(providerConfig)
       const didResolver = new Resolver(vdaDidResolver)
@@ -127,7 +141,7 @@ describe('VdaDID', () => {
 
       const serviceEndPoint = 'https://db.testnet.verida.io:5002'
 
-      // console.log("==========vdaDID", vdaDid)
+      console.log("==========vdaDID", vdaDid)
 
       for (const context in contextList) {
         const msgHash = await vdaDid.setAttribute(
@@ -136,14 +150,14 @@ describe('VdaDID', () => {
           86400
         )
 
-        // console.log('messaging : ', msgHash)
+        console.log('messaging : ', msgHash)
     
         const txHash = await vdaDid.setAttribute(
           keyList[1],
           serviceEndPoint + '##' + context + '##database',
           86400
         )
-        // console.log('database : ', txHash)
+        console.log('database : ', txHash)
       }  
 
       // console.log(doc)
