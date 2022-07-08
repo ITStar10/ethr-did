@@ -4,7 +4,7 @@ import { Contract, ContractFactory } from '@ethersproject/contracts'
 import { InfuraProvider, JsonRpcProvider, Web3Provider } from '@ethersproject/providers'
 import { Wallet } from '@ethersproject/wallet'
 // import { getResolver } from 'ethr-did-resolver'
-import { getResolver } from 'ethr-did-resolver'
+import { getResolver } from 'vda-did-resolver'
 
 import { EthrDID, BulkDelegateParam, BulkAttributeParam, BulkSignedDelegateParam, BulkSignedAttributeParam, DelegateTypes } from '../index'
 

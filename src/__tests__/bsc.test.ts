@@ -4,7 +4,7 @@ import { Contract, ContractFactory } from '@ethersproject/contracts'
 import { InfuraProvider, JsonRpcProvider, Web3Provider } from '@ethersproject/providers'
 import { Wallet } from '@ethersproject/wallet'
 // import { getResolver } from 'ethr-did-resolver'
-import { getResolver } from 'ethr-did-resolver'
+import { getResolver } from 'vda-did-resolver'
 
 import { EthrDID, DelegateTypes, KeyPair } from '../index'
 import { createProvider, sleep } from './testUtils'
@@ -19,8 +19,9 @@ describe('EthrDID', () => {
 
   const rpcUrl = 'https://speedy-nodes-nyc.moralis.io/bd1c39d7c8ee1229b16b4a97/bsc/testnet'
 
-  const registry = '0xDB06192CEdBc3a246D59883A6945ae7CDF02E807'
-
+  // const registry = '0xDB06192CEdBc3a246D59883A6945ae7CDF02E807'
+  const registry = '0x713A5Db664297195061b9558f40e88434cb79C77'
+  
   let ethrDid: EthrDID,
     identity: string,
     owner: string,
