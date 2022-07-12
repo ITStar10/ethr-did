@@ -43,7 +43,7 @@
     ],
     "testEnvironment": "node",
     "testMatch": [
-      "**/__tests__/**/bsc_gasless.test.[jt]s"
+      "**/__tests__/**/time_measure_polygon.test.[jt]s"
     ]
   },
   "devDependencies": {

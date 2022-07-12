@@ -10,7 +10,12 @@ import { verifyJWT } from 'did-jwt'
 
 import { privateKey } from '/mnt/Work/Sec/test.json'
 
-const rpcUrl = 'https://speedy-nodes-nyc.moralis.io/bd1c39d7c8ee1229b16b4a97/bsc/testnet'
+// const rpcUrl = 'https://speedy-nodes-nyc.moralis.io/bd1c39d7c8ee1229b16b4a97/bsc/testnet'
+const rpcUrl = 'https://speedy-nodes-nyc.moralis.io/20cea78632b2835b730fdcf4/bsc/testnet'
+
+// Paid BSC RPC
+// https://speedy-nodes-nyc.moralis.io/24036fe0cb35ad4bdc12155f/bsc/mainnet
+// https://speedy-nodes-nyc.moralis.io/20cea78632b2835b730fdcf4/bsc/testnet
 const registry = '0x2862BC860f55D389bFBd1A37477651bc1642A20B'
 
 const identity = '0x599b3912A63c98dC774eF3E60282fBdf14cda748'.toLowerCase()
@@ -70,7 +75,6 @@ describe('VdaDID', () => {
       console.log("###################Service###########", doc.didDocument.service)
     })
 
-    /*
     it ('Add verification method - Delegate', async () => {
       const delegate1 = '0x01298a7ec3e153dac8d0498ea9b40d3a40b51900'
 
@@ -80,12 +84,11 @@ describe('VdaDID', () => {
           expiresIn: 86400,
         }));
 
-      // console.log('TxHash -- ', txHash)
+      console.log('TxHash -- ', txHash)
       
       // await provider.waitForTransaction(txHash)
     })
 
-    
     it ('Add verification method', async() => {
       // Add publicKey
       const  pubKeyList = [
@@ -110,9 +113,8 @@ describe('VdaDID', () => {
 
       // console.log(doc.didDocument.verificationMethod)
     })
-    */
-
     
+    /*
     it('Add multiple service by for loop',async () => {
       const keyList = [
         'did/svc/VeridaMessage',
@@ -150,15 +152,16 @@ describe('VdaDID', () => {
       console.log(doc.didDocument.verificationMethod)
       console.log(doc.didDocument.service)
     })
+    */
     
-    /*
     it('Time measure for adding service', async () => {
       const msgHash = await vdaDid.setAttribute(
         'did/svc/VeridaMessage', 
         'https://db.testnet.verida.io:5002##0x84e5fb4eb5c3f53d8506e7085dfbb0ef333c5f7d0769bcaf4ca2dc0ca4600003##messaging', 
         86400
       )
-      await provider.waitForTransaction(msgHash)
+      console.log(msgHash)
+      // await provider.waitForTransaction(msgHash)
   
       const startTime = Date.now()
       console.log('Start : ', startTime)
@@ -167,13 +170,13 @@ describe('VdaDID', () => {
         'https://db.testnet.verida.io:5002##0x84e5fb4eb5c3f53d8506e7085dfbb0ef333c5f7d0769bcaf4ca2dc0ca4600004##database',
         86400
       )
-      await provider.waitForTransaction(txHash)
+      console.log(txHash)
+      // await provider.waitForTransaction(txHash)
       const endTime = Date.now()
       console.log('End : ', endTime)
   
       console.log('Time Consumed: ', endTime - startTime)
     })
-    */
   })
 
   
