@@ -2,14 +2,14 @@
 import { Resolver, Resolvable } from 'did-resolver'
 import { JsonRpcProvider } from '@ethersproject/providers'
 import { Wallet } from '@ethersproject/wallet'
-import { getResolver } from 'vda-did-resolver'
+import { getResolver } from '@verida/vda-did-resolver'
 
 import { VdaDID, DelegateTypes, KeyPair } from '../index'
 import { verifyJWT } from 'did-jwt'
 
 import { privateKey } from '/mnt/Work/Sec/test.json'
 
-const registry = '0x2862BC860f55D389bFBd1A37477651bc1642A20B'
+const registry = '0x17dFd83eFDD2D0c430E2cA4b01d1df93cDa9960b'
 
 const identity = '0x599b3912A63c98dC774eF3E60282fBdf14cda748'.toLowerCase()
 const owner = identity;

@@ -9,7 +9,7 @@ import { privateKey } from '/mnt/Work/Sec/test.json'
 const rpcUrl = 'https://speedy-nodes-nyc.moralis.io/20cea78632b2835b730fdcf4/bsc/testnet'
 
 // const registryAddres = new Map<string, string>([
-//   ['bscTest', '0x2862BC860f55D389bFBd1A37477651bc1642A20B'],
+//   ['bscTest', '0x17dFd83eFDD2D0c430E2cA4b01d1df93cDa9960b'],
 //   ['polygonTest', '0xcfE57be6585B201127CaB6bE079Ae2f95bf02214']
 // ])
 
