@@ -164,7 +164,11 @@ export class VdaDID {
       throw new Error('a web3 provider configuration is needed for network operations')
     }
     const owner = await this.lookupOwner()
+
+    // console.log('vda-did setAttribute key: ', key)
+    // console.log('vda-did setAttribute value: ', value)
     // console.log('vda-did setAttribute : ', attributeToHex(key, value))
+
     const receipt = await this.controller.setAttribute(key, attributeToHex(key, value), expiresIn, {
       gasLimit,
       ...txOptions,
@@ -296,25 +300,23 @@ function attributeToHex(key: string, value: string | Uint8Array): string {
   const matchKeyWithEncoding = key.match(/^did\/(pub|auth|svc)\/(\w+)(\/(\w+))?(\/(\w+))?$/)
   const encoding = matchKeyWithEncoding?.[6]
 
-  const matchValueWithContext =
-    matchKeyWithEncoding?.[1] === 'svc'
-      ? (<string>value).match(/(.*)\?context=(.*)&type=(\w+)/)
-      : (<string>value).match(/(.*)\?context=(.*)/)
+  // const matchValueWithContext =
+  //   matchKeyWithEncoding?.[1] === 'svc'
+  //     ? (<string>value).match(/(.*)\?context=(.*)&type=(\w+)/)
+  //     : (<string>value).match(/(.*)\?context=(.*)/)
+  const matchValueWithContext = value.match(/(.*)(\?context=(.*))/)
 
   // console.log('attributeToHex value : ', value)
   // console.log('attributeToHex matched : ', matchValueWithContext)
 
   const attrVal = matchValueWithContext ? matchValueWithContext?.[1] : <string>value
   const attrContext = matchValueWithContext?.[2]
-  const attrType = matchValueWithContext?.[3]
 
   let returnValue = decodeAttrValue(attrVal, encoding)
 
-  const contextTag = Buffer.from('?context=', 'utf-8').toString('hex')
-  if (attrContext) returnValue = `${returnValue}${contextTag}${decodeAttrValue(attrContext, encoding).slice(2)}`
-  if (attrType) {
-    const typeTag = Buffer.from(`&type=${attrType}`, 'utf-8').toString('hex')
-    returnValue = `${returnValue}${typeTag}`
+  if (attrContext) {
+    const contextTag = Buffer.from(attrContext, 'utf-8').toString('hex')
+    returnValue = `${returnValue}${contextTag}`
   }
   return returnValue
 }

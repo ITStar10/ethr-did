@@ -134,14 +134,29 @@ describe('VdaDID', () => {
       // const TypeTag = Buffer.from('&type=', 'utf-8').toString('hex')
       // console.log('typeTag : ', TypeTag)
 
-      console.log(hexlify(Base58.decode('9wnDMjPNyfNb7hZGRFzpQYMRSF6sThMBPSeoRzKHUKW3')))
-      console.log(hexlify(Base58.decode('HruRwZVeWMbwpsm6adWqfHvQoiGbu3ta9PQwNsw4pE5u')))
-      
+      // console.log(hexlify(Base58.decode('9wnDMjPNyfNb7hZGRFzpQYMRSF6sThMBPSeoRzKHUKW3')))
+      // console.log(hexlify(Base58.decode('HruRwZVeWMbwpsm6adWqfHvQoiGbu3ta9PQwNsw4pE5u')))
+
+      // const value = '0x123context=0x345&type=message'
+      const value = 'https://db.testnet.verida.io:5002?context=0x84e5fb4eb5c3f53d8506e7085dfbb0ef333c5f7d0769bcaf4ca2dc0ca4698fd4&type=database'
+
+      const matchHexString = value.match(/^0x[0-9a-fA-F]*$/)
+      console.log(matchHexString)
+
+      const utf8 = toUtf8Bytes(value)
+      const hexString = hexlify(utf8) 
+
+      console.log(utf8)
+      console.log(hexString)
+
+      const testEncoded = '0x68747470733a2f2f64622e746573746e65742e7665726964612e696f3a353030323f636f6e746578743d84e5fb4eb5c3f53d8506e7085dfbb0ef333c5f7d0769bcaf4ca2dc0ca4698fd426747970653d6461746162617365'
+
+      const decdoeHex = Buffer.from(hexString.slice(2), 'hex').toString()
+      console.log(decdoeHex)
 
     })
     */
 
-    /*
     beforeAll(async () => {
       const providerConfig = { 
         rpcUrl, 
@@ -158,7 +173,6 @@ describe('VdaDID', () => {
       // console.log("####.toString()###############Authentication###########", doc.didDocument.authentication)
       // console.log("###################Service###########", doc.didDocument.service)
     })
-    */
 
     /*
     it ('Test', async () => {
@@ -206,7 +220,6 @@ describe('VdaDID', () => {
     //   // await provider.waitForTransaction(txHash)
     // })
 
-    /*
     it ('Add verification method', async() => {
 
       doc = await didResolver.resolve(vdaDid.did)
@@ -237,7 +250,7 @@ describe('VdaDID', () => {
         '0x55418c45e3ad1ba47c69f266d6c49c589b9d70de837e318c78ff43c7f0ba89c8'
       ]
 
-      for (let i = 0; i < 1; i++ ){     
+      for (let i = 0; i < 3; i++ ){     
         // Base58 Test
         const key = `did/pub/Secp256k1/${keyPurpose[i]}/base58`
         // const value = `${pubKeyList[i]}`
@@ -266,6 +279,7 @@ describe('VdaDID', () => {
       console.log("keyAgreement : ", doc.didDocument.keyAgreement)
     })
 
+    /*
     it ('Revoke verification method', async() => {
 
       doc = await didResolver.resolve(vdaDid.did)
@@ -324,7 +338,7 @@ describe('VdaDID', () => {
       console.log("keyAgreement : ", doc.didDocument.keyAgreement)
     })
     */
-    
+
     /*
     it('Add multiple service by for loop',async () => {
 
