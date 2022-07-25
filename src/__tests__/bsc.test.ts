@@ -121,6 +121,7 @@ describe('VdaDID', () => {
     // let didResolver,
     let doc
 
+    /*
     it('conversion test',async () => {
       // const t = Buffer.from('abc?context=def', 'utf-8').toString('hex')
       // console.log('Encoded = ', t)
@@ -138,6 +139,7 @@ describe('VdaDID', () => {
       
 
     })
+    */
 
     /*
     beforeAll(async () => {
@@ -156,7 +158,9 @@ describe('VdaDID', () => {
       // console.log("####.toString()###############Authentication###########", doc.didDocument.authentication)
       // console.log("###################Service###########", doc.didDocument.service)
     })
+    */
 
+    /*
     it ('Test', async () => {
       const delegate1 = '0x01398a7ec3e153dac8d0498ea9b40d3a40b51900'
 
@@ -248,10 +252,70 @@ describe('VdaDID', () => {
         const txHash = await vdaDid.setAttribute(
           key,
           value,
-          86400 * (i + 1)
+          // 86400 * (i + 1)
+        )
+        // console.log(`TxHash for ${i} :`, txHash)
+      }
+
+      console.log('===== Document after attribute added =====')
+      
+      doc = await didResolver.resolve(vdaDid.did)
+      console.log("verificationMethod : ", doc.didDocument.verificationMethod)
+      console.log("AssertionMethod : ", doc.didDocument.assertionMethod)
+      console.log("Authentication : ", doc.didDocument.authentication)
+      console.log("keyAgreement : ", doc.didDocument.keyAgreement)
+    })
+
+    it ('Revoke verification method', async() => {
+
+      doc = await didResolver.resolve(vdaDid.did)
+
+      console.log("verificationMethod : ", doc.didDocument.verificationMethod)
+      console.log("AssertionMethod : ", doc.didDocument.assertionMethod)
+      console.log("Authentication : ", doc.didDocument.authentication)
+      console.log("keyAgreement : ", doc.didDocument.keyAgreement)
+
+      // Add publicKey
+      const  pubKeyList = [
+        '0xfa83bbb792710e80b7605fe4ac680eb7f070ffadcca31aeb0312df80f7361938',
+        '0x029d3638eff201f684e5a9e0ad79373a1ebe14e1d369c0cea0e1f6914792d1f60e',
+        '0x6a3043320fcff32043e20d75727958e25d3613119058f9be77916c635769dc70',
+        // '0x027f68efbb37abae2e3d4ef61f2a7c8e2d74b50db6d57791cd0fe7261abfe07862',
+        // '0x83f18992724ea6be59c315f1ea6202ce1ec37bed772e12bab9eff2b64decc074',
+      ]
+
+      const keyPurpose = [
+        'sigAuth',
+        'enc',
+        'veriKey'
+      ]
+
+      const contextList = [
+        '0x84e5fb4eb5c3f53d8506e7085dfbb0ef333c5f7d0769bcaf4ca2dc0ca4698fd4',
+        '0xcfbf4621af64386c92c0badd0aa3ae3877a6ea6e298dfa54aa6b1ebe00769b28',
+        '0x55418c45e3ad1ba47c69f266d6c49c589b9d70de837e318c78ff43c7f0ba89c8'
+      ]
+
+      for (let i = 0; i < 3; i++ ){     
+        // Base58 Test
+        const key = `did/pub/Secp256k1/${keyPurpose[i]}/base58`
+        // const value = `${pubKeyList[i]}`
+        // const value = `${Base58.encode(pubKeyList[i])}?context=${contextList[i]}`
+        const value = `${Base58.encode(pubKeyList[i])}?context=${Base58.encode(contextList[i])}`
+
+        // // No Encoding test
+        // const key = `did/pub/Secp256k1/${keyPurpose[i]}`
+        // // const value = `${pubKeyList[i]}?context=${contextList[i]}`
+        // const value = 'abc?context=def&type=message'
+        
+        const txHash = await vdaDid.revokeAttribute(
+          key,
+          value,
+          // 86400 * (i + 1)
         )
         console.log(`TxHash for ${i} :`, txHash)
       }
+      console.log('===== Document after attribute revoked =====')
       
       doc = await didResolver.resolve(vdaDid.did)
       console.log("verificationMethod : ", doc.didDocument.verificationMethod)
@@ -263,6 +327,11 @@ describe('VdaDID', () => {
     
     /*
     it('Add multiple service by for loop',async () => {
+
+      doc = await didResolver.resolve(vdaDid.did)
+      console.log(doc.didDocument.verificationMethod)
+      console.log(doc.didDocument.service)
+
       const keyList = [
         'did/svc/VeridaMessage',
         'did/svc/VeridaDatabase',
@@ -270,32 +339,35 @@ describe('VdaDID', () => {
 
       const contextList = [
         '0x84e5fb4eb5c3f53d8506e7085dfbb0ef333c5f7d0769bcaf4ca2dc0ca4698fd4',
-        '0xcfbf4621af64386c92c0badd0aa3ae3877a6ea6e298dfa54aa6b1ebe00769b28',
-        '0x55418c45e3ad1ba47c69f266d6c49c589b9d70de837e318c78ff43c7f0ba89c8'
+        // '0xcfbf4621af64386c92c0badd0aa3ae3877a6ea6e298dfa54aa6b1ebe00769b28',
+        // '0x55418c45e3ad1ba47c69f266d6c49c589b9d70de837e318c78ff43c7f0ba89c8'
       ]
 
       const serviceEndPoint = 'https://db.testnet.verida.io:5002'
 
       // console.log("==========vdaDID", vdaDid)
 
-      for (const context in contextList) {
+      for (let i = 0; i < contextList.length; i++) {
+        const context = contextList[i]
+
+        // console.log('value - ', context)
         const msgHash = await vdaDid.setAttribute(
           keyList[0], 
-          serviceEndPoint + '##' + context + '##messaging', 
+          `${serviceEndPoint}?context=${context}&type=messaging`, 
           86400
         )
-
         // console.log('messaging : ', msgHash)
     
         const txHash = await vdaDid.setAttribute(
           keyList[1],
-          serviceEndPoint + '##' + context + '##database',
+          `${serviceEndPoint}?context=${context}&type=database`, 
           86400
         )
         // console.log('database : ', txHash)
       }  
 
-      // console.log(doc)
+      console.log('===== Document after service added =====')
+      doc = await didResolver.resolve(vdaDid.did)
       console.log(doc.didDocument.verificationMethod)
       console.log(doc.didDocument.service)
     })

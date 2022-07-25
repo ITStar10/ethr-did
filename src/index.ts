@@ -112,15 +112,10 @@ export class VdaDID {
     }
     const owner = await this.lookupOwner()
 
-    // console.log('ethr-did controller = ', this.controller)
-
-    // console.log('txOptions = ', txOptions)
-
     const receipt = await this.controller.changeOwner(newOwner, {
       ...txOptions,
       from: owner,
     })
-    // console.log('txResult = ', receipt)
 
     this.owner = newOwner
     return receipt.data
@@ -169,7 +164,7 @@ export class VdaDID {
       throw new Error('a web3 provider configuration is needed for network operations')
     }
     const owner = await this.lookupOwner()
-    console.log('vda-did setAttribute : ', attributeToHex(key, value))
+    // console.log('vda-did setAttribute : ', attributeToHex(key, value))
     const receipt = await this.controller.setAttribute(key, attributeToHex(key, value), expiresIn, {
       gasLimit,
       ...txOptions,
@@ -282,15 +277,12 @@ function decodeAttrValue(value: string, encoding: string | undefined) {
   const matchHexString = value.match(/^0x[0-9a-fA-F]*$/)
   if (encoding && !matchHexString) {
     if (encoding === 'base64') {
-      console.log('Encoding = base64')
       return hexlify(base64.decode(value))
     }
     if (encoding === 'base58') {
-      console.log('Encoding = base58')
       return hexlify(Base58.decode(value))
     }
   } else if (matchHexString) {
-    console.log('Encoding = NoEncoding but hexString')
     return <string>value
   }
 
@@ -304,25 +296,24 @@ function attributeToHex(key: string, value: string | Uint8Array): string {
   const matchKeyWithEncoding = key.match(/^did\/(pub|auth|svc)\/(\w+)(\/(\w+))?(\/(\w+))?$/)
   const encoding = matchKeyWithEncoding?.[6]
 
-  // const matchValueWithContext =
-  //   matchKeyWithEncoding?.[1] === 'svc'
-  //     ? (<string>value).match(/(.*)\?context=(.*)&type=(\w+)/)
-  //     : (<string>value).match(/(.*)\?context=(.*)/)
-  const matchValueWithContext = (<string>value).match(/(\w+)(\?context=(\w+)(&type=(\w+))?)?/)
+  const matchValueWithContext =
+    matchKeyWithEncoding?.[1] === 'svc'
+      ? (<string>value).match(/(.*)\?context=(.*)&type=(\w+)/)
+      : (<string>value).match(/(.*)\?context=(.*)/)
+
+  // console.log('attributeToHex value : ', value)
+  // console.log('attributeToHex matched : ', matchValueWithContext)
 
   const attrVal = matchValueWithContext ? matchValueWithContext?.[1] : <string>value
-  const attrContext = matchValueWithContext?.[3]
-  const attrType = matchValueWithContext?.[5]
+  const attrContext = matchValueWithContext?.[2]
+  const attrType = matchValueWithContext?.[3]
 
   let returnValue = decodeAttrValue(attrVal, encoding)
-
-  // if (attrContext) returnValue = `${returnValue}?context=${decodeAttrValue(attrContext, encoding)}`
-  // if (attrType) returnValue = `${returnValue}&type=${attrType}`
 
   const contextTag = Buffer.from('?context=', 'utf-8').toString('hex')
   if (attrContext) returnValue = `${returnValue}${contextTag}${decodeAttrValue(attrContext, encoding).slice(2)}`
   if (attrType) {
-    const typeTag = Buffer.from(matchValueWithContext?.[4], 'utf-8').toString('hex')
+    const typeTag = Buffer.from(`&type=${attrType}`, 'utf-8').toString('hex')
     returnValue = `${returnValue}${typeTag}`
   }
   return returnValue
