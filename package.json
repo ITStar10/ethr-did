@@ -1,5 +1,5 @@
 {
-  "name": "vda-did",
+  "name": "@verida/vda-did",
   "version": "0.1.1",
   "description": "Create, manage and use did:vda identifiers",
   "source": "src/index.ts",
