@@ -59,6 +59,7 @@ export type BulkAttributeParam = {
   validity?: number
 }
 
+/** A class that interacts with VdaDIDRegistry contract */
 export class VdaDID {
   public did: string
   public address: string
@@ -67,6 +68,7 @@ export class VdaDID {
   private owner?: string
   private controller?: VdaDidController
 
+  /** Create a VdaDID instance */
   constructor(conf: IConfig) {
     const { address, publicKey, network } = interpretIdentifier(conf.identifier)
 
@@ -88,6 +90,7 @@ export class VdaDID {
     // }
   }
 
+  /** Create a Wallet that will be used to sign transactions */
   static createKeyPair(chainNameOrId?: string | number): KeyPair {
     const wallet = Wallet.createRandom()
     const privateKey = wallet.privateKey
@@ -98,17 +101,23 @@ export class VdaDID {
     return { address, privateKey, publicKey, identifier }
   }
 
+  /** Get a owner of a DID */
   async lookupOwner(cache = true): Promise<string> {
-    if (typeof this.controller === 'undefined') {
-      throw new Error('a web3 provider configuration is needed for network operations')
-    }
-    if (cache && this.owner) return this.owner
-    return this.controller?.getOwner(this.address)
+    return new Promise((resolve, reject) => {
+      if (typeof this.controller === 'undefined') {
+        reject('a web3 provider configuration is needed for network operations')
+      }
+      if (cache && this.owner) {
+        resolve(this.owner)
+      }
+      resolve(this.controller!.getOwner(this.address))
+    })
   }
 
+  /** Change the owner of DID */
   async changeOwner(newOwner: string, txOptions?: CallOverrides): Promise<string> {
     if (typeof this.controller === 'undefined') {
-      throw new Error('a web3 provider configuration is needed for network operations')
+      return Promise.reject('a web3 provider configuration is needed for network operations')
     }
     const owner = await this.lookupOwner()
 
@@ -118,17 +127,19 @@ export class VdaDID {
     })
 
     this.owner = newOwner
-    return receipt.data
+    return Promise.resolve(receipt)
   }
 
+  /** Add a delegate */
   async addDelegate(
     delegate: string,
     delegateOptions?: DelegateOptions,
     txOptions: CallOverrides = {}
   ): Promise<string> {
     if (typeof this.controller === 'undefined') {
-      throw new Error('a web3 provider configuration is needed for network operations')
+      return Promise.reject('a web3 provider configuration is needed for network operations')
     }
+
     const owner = await this.lookupOwner()
     const receipt = await this.controller.addDelegate(
       delegateOptions?.delegateType || DelegateTypes.veriKey,
@@ -136,22 +147,24 @@ export class VdaDID {
       delegateOptions?.expiresIn || 86400,
       { ...txOptions, from: owner }
     )
-    return receipt.data
+    return Promise.resolve(receipt.data)
   }
 
+  /** Revoke a delegate */
   async revokeDelegate(
     delegate: string,
     delegateType = DelegateTypes.veriKey,
     txOptions: CallOverrides = {}
   ): Promise<string> {
     if (typeof this.controller === 'undefined') {
-      throw new Error('a web3 provider configuration is needed for network operations')
+      return Promise.reject('a web3 provider configuration is needed for network operations')
     }
     const owner = await this.lookupOwner()
     const receipt = await this.controller.revokeDelegate(delegateType, delegate, { ...txOptions, from: owner })
-    return receipt.data
+    return Promise.resolve(receipt.data)
   }
 
+  /** Set an attribute. */
   async setAttribute(
     key: string,
     value: string | Uint8Array,
@@ -161,7 +174,7 @@ export class VdaDID {
     txOptions: CallOverrides = {}
   ): Promise<string> {
     if (typeof this.controller === 'undefined') {
-      throw new Error('a web3 provider configuration is needed for network operations')
+      return Promise.reject('a web3 provider configuration is needed for network operations')
     }
     const owner = await this.lookupOwner()
 
@@ -174,9 +187,10 @@ export class VdaDID {
       ...txOptions,
       from: owner,
     })
-    return receipt.data
+    return Promise.resolve(receipt.data)
   }
 
+  /** Revoke an attribute */
   async revokeAttribute(
     key: string,
     value: string | Uint8Array,
@@ -185,7 +199,7 @@ export class VdaDID {
     txOptions: CallOverrides = {}
   ): Promise<string> {
     if (typeof this.controller === 'undefined') {
-      throw new Error('a web3 provider configuration is needed for network operations')
+      return Promise.reject('a web3 provider configuration is needed for network operations')
     }
     const owner = await this.lookupOwner()
     const receipt = await this.controller.revokeAttribute(key, attributeToHex(key, value), {
@@ -193,7 +207,7 @@ export class VdaDID {
       ...txOptions,
       from: owner,
     })
-    return receipt.data
+    return Promise.resolve(receipt.data)
   }
 
   // async nonce(signer: string, gasLimit?: number, txOptions: CallOverrides = {}): Promise<BigInt> {
@@ -210,7 +224,7 @@ export class VdaDID {
   //   return receipt.toBigInt()
   // }
 
-  // Newly Added
+  /** Perform bulk transaction for add delegates & attributes */
   async bulkAdd(
     delegateParams: BulkDelegateParam[],
     attributeParams: BulkAttributeParam[],
@@ -219,7 +233,7 @@ export class VdaDID {
     txOptions: CallOverrides = {}
   ): Promise<string> {
     if (typeof this.controller === 'undefined') {
-      throw new Error('a web3 provider configuration is needed for network operations')
+      return Promise.reject('a web3 provider configuration is needed for network operations')
     }
 
     const controllerDParams = delegateParams.map((item) => {
@@ -240,9 +254,10 @@ export class VdaDID {
 
     const owner = await this.lookupOwner()
     const receipt = await this.controller.bulkAdd(controllerDParams, controllerAParams, { ...txOptions, from: owner })
-    return receipt.data
+    return Promise.resolve(receipt.data)
   }
 
+  /** Perform a bulk transaction for removing delegates & attributes */
   async bulkRevoke(
     delegateParams: BulkDelegateParam[],
     attributeParams: BulkAttributeParam[],
@@ -251,7 +266,7 @@ export class VdaDID {
     txOptions: CallOverrides = {}
   ): Promise<string> {
     if (typeof this.controller === 'undefined') {
-      throw new Error('a web3 provider configuration is needed for network operations')
+      return Promise.reject('a web3 provider configuration is needed for network operations')
     }
 
     const controllerDParams = delegateParams.map((item) => {
@@ -273,10 +288,11 @@ export class VdaDID {
       ...txOptions,
       from: owner,
     })
-    return receipt.data
+    return Promise.resolve(receipt.data)
   }
 }
 
+/** Sub function for attributeToHex() */
 function decodeAttrValue(value: string, encoding: string | undefined) {
   const matchHexString = value.match(/^0x[0-9a-fA-F]*$/)
   if (encoding && !matchHexString) {
@@ -293,6 +309,12 @@ function decodeAttrValue(value: string, encoding: string | undefined) {
   return hexlify(toUtf8Bytes(value))
 }
 
+/**
+ * Convert string to hex format. Used in DIDRegistryContract interaction
+ * @param key - Attribute key
+ * @param value - Attribute value
+ * @returns {string} string value in hex format
+ */
 function attributeToHex(key: string, value: string | Uint8Array): string {
   if (value instanceof Uint8Array || isBytes(value)) {
     return hexlify(value)

@@ -84,6 +84,19 @@ describe('VdaDID', () => {
     didResolver = new Resolver(vdaDidResolver)
   })
 
+  it('defaults owner to itself', async () => {
+    const prevOwner = await vdaDid.lookupOwner()
+    console.log('Prev Owner = ', prevOwner)
+    
+    // Don't test continuously. Require private key
+    const tx = await vdaDid.changeOwner(owner)
+    console.log('ChangeOwner() : ', tx)
+
+    const newOwner = await vdaDid.lookupOwner()
+    console.log('New Owner = ', newOwner)
+
+  })
+
   describe('delegates', () => {
     const delegate1 = '0x01298a7ec3e153dac8d0498ea9b40d3a40b51900'
 
