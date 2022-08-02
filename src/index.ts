@@ -5,14 +5,15 @@ import { computeAddress } from '@ethersproject/transactions'
 import { computePublicKey } from '@ethersproject/signing-key'
 import { Provider } from '@ethersproject/providers'
 import { Wallet } from '@ethersproject/wallet'
-import * as base64 from '@ethersproject/base64'
-import { hexlify, hexValue, isBytes } from '@ethersproject/bytes'
-import { Base58 } from '@ethersproject/basex'
-import { toUtf8Bytes } from '@ethersproject/strings'
+import { hexValue } from '@ethersproject/bytes'
 import { interpretIdentifier, REGISTRY, VdaDidController } from '@verida/vda-did-resolver'
 import { Resolvable } from 'did-resolver'
 
-import { CallType, VeridaWeb3ConfigurationOption } from '@verida/vda-did-resolver'
+import { CallType, VdaTransactionResult, VeridaWeb3ConfigurationOption } from '@verida/vda-did-resolver'
+
+import { attributeToHex } from './helpers'
+
+export { VdaTransactionResult }
 
 export enum DelegateTypes {
   veriKey = 'veriKey',
@@ -115,7 +116,7 @@ export class VdaDID {
   }
 
   /** Change the owner of DID */
-  async changeOwner(newOwner: string, txOptions?: CallOverrides): Promise<string> {
+  async changeOwner(newOwner: string, txOptions?: CallOverrides): Promise<VdaTransactionResult> {
     if (typeof this.controller === 'undefined') {
       return Promise.reject('a web3 provider configuration is needed for network operations')
     }
@@ -135,7 +136,7 @@ export class VdaDID {
     delegate: string,
     delegateOptions?: DelegateOptions,
     txOptions: CallOverrides = {}
-  ): Promise<string> {
+  ): Promise<VdaTransactionResult> {
     if (typeof this.controller === 'undefined') {
       return Promise.reject('a web3 provider configuration is needed for network operations')
     }
@@ -147,7 +148,7 @@ export class VdaDID {
       delegateOptions?.expiresIn || 86400,
       { ...txOptions, from: owner }
     )
-    return Promise.resolve(receipt.data)
+    return Promise.resolve(receipt)
   }
 
   /** Revoke a delegate */
@@ -155,13 +156,13 @@ export class VdaDID {
     delegate: string,
     delegateType = DelegateTypes.veriKey,
     txOptions: CallOverrides = {}
-  ): Promise<string> {
+  ): Promise<VdaTransactionResult> {
     if (typeof this.controller === 'undefined') {
       return Promise.reject('a web3 provider configuration is needed for network operations')
     }
     const owner = await this.lookupOwner()
     const receipt = await this.controller.revokeDelegate(delegateType, delegate, { ...txOptions, from: owner })
-    return Promise.resolve(receipt.data)
+    return Promise.resolve(receipt)
   }
 
   /** Set an attribute. */
@@ -172,7 +173,7 @@ export class VdaDID {
     /** @deprecated, please use txOptions.gasLimit */
     gasLimit?: number,
     txOptions: CallOverrides = {}
-  ): Promise<string> {
+  ): Promise<VdaTransactionResult> {
     if (typeof this.controller === 'undefined') {
       return Promise.reject('a web3 provider configuration is needed for network operations')
     }
@@ -187,7 +188,7 @@ export class VdaDID {
       ...txOptions,
       from: owner,
     })
-    return Promise.resolve(receipt.data)
+    return Promise.resolve(receipt)
   }
 
   /** Revoke an attribute */
@@ -197,7 +198,7 @@ export class VdaDID {
     /** @deprecated please use `txOptions.gasLimit` */
     gasLimit?: number,
     txOptions: CallOverrides = {}
-  ): Promise<string> {
+  ): Promise<VdaTransactionResult> {
     if (typeof this.controller === 'undefined') {
       return Promise.reject('a web3 provider configuration is needed for network operations')
     }
@@ -207,7 +208,7 @@ export class VdaDID {
       ...txOptions,
       from: owner,
     })
-    return Promise.resolve(receipt.data)
+    return Promise.resolve(receipt)
   }
 
   // async nonce(signer: string, gasLimit?: number, txOptions: CallOverrides = {}): Promise<BigInt> {
@@ -231,7 +232,7 @@ export class VdaDID {
     /** @deprecated, please use txOptions.gasLimit */
     gasLimit?: number,
     txOptions: CallOverrides = {}
-  ): Promise<string> {
+  ): Promise<VdaTransactionResult> {
     if (typeof this.controller === 'undefined') {
       return Promise.reject('a web3 provider configuration is needed for network operations')
     }
@@ -254,7 +255,7 @@ export class VdaDID {
 
     const owner = await this.lookupOwner()
     const receipt = await this.controller.bulkAdd(controllerDParams, controllerAParams, { ...txOptions, from: owner })
-    return Promise.resolve(receipt.data)
+    return Promise.resolve(receipt)
   }
 
   /** Perform a bulk transaction for removing delegates & attributes */
@@ -264,7 +265,7 @@ export class VdaDID {
     /** @deprecated, please use txOptions.gasLimit */
     gasLimit?: number,
     txOptions: CallOverrides = {}
-  ): Promise<string> {
+  ): Promise<VdaTransactionResult> {
     if (typeof this.controller === 'undefined') {
       return Promise.reject('a web3 provider configuration is needed for network operations')
     }
@@ -288,57 +289,6 @@ export class VdaDID {
       ...txOptions,
       from: owner,
     })
-    return Promise.resolve(receipt.data)
+    return Promise.resolve(receipt)
   }
-}
-
-/** Sub function for attributeToHex() */
-function decodeAttrValue(value: string, encoding: string | undefined) {
-  const matchHexString = value.match(/^0x[0-9a-fA-F]*$/)
-  if (encoding && !matchHexString) {
-    if (encoding === 'base64') {
-      return hexlify(base64.decode(value))
-    }
-    if (encoding === 'base58') {
-      return hexlify(Base58.decode(value))
-    }
-  } else if (matchHexString) {
-    return <string>value
-  }
-
-  return hexlify(toUtf8Bytes(value))
-}
-
-/**
- * Convert string to hex format. Used in DIDRegistryContract interaction
- * @param key - Attribute key
- * @param value - Attribute value
- * @returns {string} string value in hex format
- */
-function attributeToHex(key: string, value: string | Uint8Array): string {
-  if (value instanceof Uint8Array || isBytes(value)) {
-    return hexlify(value)
-  }
-  const matchKeyWithEncoding = key.match(/^did\/(pub|auth|svc)\/(\w+)(\/(\w+))?(\/(\w+))?$/)
-  const encoding = matchKeyWithEncoding?.[6]
-
-  // const matchValueWithContext =
-  //   matchKeyWithEncoding?.[1] === 'svc'
-  //     ? (<string>value).match(/(.*)\?context=(.*)&type=(\w+)/)
-  //     : (<string>value).match(/(.*)\?context=(.*)/)
-  const matchValueWithContext = value.match(/(.*)(\?context=(.*))/)
-
-  // console.log('attributeToHex value : ', value)
-  // console.log('attributeToHex matched : ', matchValueWithContext)
-
-  const attrVal = matchValueWithContext ? matchValueWithContext?.[1] : <string>value
-  const attrContext = matchValueWithContext?.[2]
-
-  let returnValue = decodeAttrValue(attrVal, encoding)
-
-  if (attrContext) {
-    const contextTag = Buffer.from(attrContext, 'utf-8').toString('hex')
-    returnValue = `${returnValue}${contextTag}`
-  }
-  return returnValue
 }
