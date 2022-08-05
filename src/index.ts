@@ -120,15 +120,14 @@ export class VdaDID {
     if (typeof this.controller === 'undefined') {
       return Promise.reject('a web3 provider configuration is needed for network operations')
     }
-    const owner = await this.lookupOwner()
-
-    const receipt = await this.controller.changeOwner(newOwner, {
-      ...txOptions,
-      from: owner,
-    })
 
     this.owner = newOwner
-    return Promise.resolve(receipt)
+
+    // const owner = await this.lookupOwner()
+    return this.controller.changeOwner(newOwner, {
+      ...txOptions,
+      // from: owner,
+    })
   }
 
   /** Add a delegate */
@@ -141,14 +140,13 @@ export class VdaDID {
       return Promise.reject('a web3 provider configuration is needed for network operations')
     }
 
-    const owner = await this.lookupOwner()
-    const receipt = await this.controller.addDelegate(
+    // const owner = await this.lookupOwner()
+    return this.controller.addDelegate(
       delegateOptions?.delegateType || DelegateTypes.veriKey,
       delegate,
       delegateOptions?.expiresIn || 86400,
-      { ...txOptions, from: owner }
+      { ...txOptions /*, from: owner*/ }
     )
-    return Promise.resolve(receipt)
   }
 
   /** Revoke a delegate */
@@ -160,9 +158,8 @@ export class VdaDID {
     if (typeof this.controller === 'undefined') {
       return Promise.reject('a web3 provider configuration is needed for network operations')
     }
-    const owner = await this.lookupOwner()
-    const receipt = await this.controller.revokeDelegate(delegateType, delegate, { ...txOptions, from: owner })
-    return Promise.resolve(receipt)
+    // const owner = await this.lookupOwner()
+    return this.controller.revokeDelegate(delegateType, delegate, { ...txOptions /*, from: owner*/ })
   }
 
   /** Set an attribute. */
@@ -177,18 +174,17 @@ export class VdaDID {
     if (typeof this.controller === 'undefined') {
       return Promise.reject('a web3 provider configuration is needed for network operations')
     }
-    const owner = await this.lookupOwner()
+    // const owner = await this.lookupOwner()
 
     // console.log('vda-did setAttribute key: ', key)
     // console.log('vda-did setAttribute value: ', value)
     // console.log('vda-did setAttribute : ', attributeToHex(key, value))
 
-    const receipt = await this.controller.setAttribute(key, attributeToHex(key, value), expiresIn, {
+    return this.controller.setAttribute(key, attributeToHex(key, value), expiresIn, {
       gasLimit,
       ...txOptions,
-      from: owner,
+      // from: owner,
     })
-    return Promise.resolve(receipt)
   }
 
   /** Revoke an attribute */
@@ -202,13 +198,12 @@ export class VdaDID {
     if (typeof this.controller === 'undefined') {
       return Promise.reject('a web3 provider configuration is needed for network operations')
     }
-    const owner = await this.lookupOwner()
-    const receipt = await this.controller.revokeAttribute(key, attributeToHex(key, value), {
+    // const owner = await this.lookupOwner()
+    return this.controller.revokeAttribute(key, attributeToHex(key, value), {
       gasLimit,
       ...txOptions,
-      from: owner,
+      // from: owner,
     })
-    return Promise.resolve(receipt)
   }
 
   // async nonce(signer: string, gasLimit?: number, txOptions: CallOverrides = {}): Promise<BigInt> {
@@ -253,9 +248,8 @@ export class VdaDID {
       }
     })
 
-    const owner = await this.lookupOwner()
-    const receipt = await this.controller.bulkAdd(controllerDParams, controllerAParams, { ...txOptions, from: owner })
-    return Promise.resolve(receipt)
+    // const owner = await this.lookupOwner()
+    return this.controller.bulkAdd(controllerDParams, controllerAParams, { ...txOptions /*, from: owner*/ })
   }
 
   /** Perform a bulk transaction for removing delegates & attributes */
@@ -284,11 +278,10 @@ export class VdaDID {
       }
     })
 
-    const owner = await this.lookupOwner()
-    const receipt = await this.controller.bulkRevoke(controllerDParams, controllerAParams, {
+    // const owner = await this.lookupOwner()
+    return this.controller.bulkRevoke(controllerDParams, controllerAParams, {
       ...txOptions,
-      from: owner,
+      // from: owner,
     })
-    return Promise.resolve(receipt)
   }
 }
