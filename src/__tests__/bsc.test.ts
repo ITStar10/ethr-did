@@ -16,12 +16,40 @@ import * as base64 from '@ethersproject/base64'
 import { Base58 } from '@ethersproject/basex'
 import { toUtf8Bytes } from '@ethersproject/strings'
 
-// const rpcUrl = 'https://speedy-nodes-nyc.moralis.io/bd1c39d7c8ee1229b16b4a97/bsc/testnet'
-const rpcUrl = 'https://speedy-nodes-nyc.moralis.io/20cea78632b2835b730fdcf4/bsc/testnet'
+import { ethers } from 'ethers'
+import EncryptionUtils from '@verida/encryption-utils'
+
+const rpcUrl = 'https://data-seed-prebsc-1-s1.binance.org:8545/'
+// const rpcUrl = 'https://speedy-nodes-nyc.moralis.io/20cea78632b2835b730fdcf4/bsc/testnet'
 // Paid BSC RPC
 // https://speedy-nodes-nyc.moralis.io/24036fe0cb35ad4bdc12155f/bsc/mainnet
 // https://speedy-nodes-nyc.moralis.io/20cea78632b2835b730fdcf4/bsc/testnet
 
+
+const testAccounts = [{
+  address : "0xFddEc248fa3FA60310c7dA7866096CA7715B604f",
+  privateKey : "0xda76b33732b82c6f2a461eaf85e1bab612cff42fe4016518e975bf6cdb79542d",
+  publicKey : "0x0429c00d6380b876d444478d00cad54a2c4f3d35e56c11353adc48d5c71f4c4be5a181ab837b99ba24b2a97f2761405d101d03905855ae68088eb8625af335d0b4"
+},{
+  address: "0x266Af2cF1622cAb50d000AaDE13198aA60ED15d6",
+  privateKey : "0xab1462b223f0b84696c0b283ac1fa4b3393eea2f2f1cee191ea17788182da8f6",
+  publicKey : "0x0416cfc657ecf1f178455987cbe66b5844ef52a00b992f6f1a398ebbbb07b42f11488a960987ad0d0f5cce8a9586090cfd43eee3c90d2296ac6faf8f63880ba559"
+},{
+  address: "0xDa6A02f01eBe37A4e5587F3E15E9621DA68fEb77",
+  privateKey : "0xeced4153adc37d9a0a43a6086084f9039cf5e8a5a1367770daff0eb58c0ba514",
+  publicKey : "0x04803f1319471d08167b3b3d08da6eff51fc98a09d17778a51e4e2815cecd5835fcdd634c6f376b87677fc6a60012a9a95120ca8d228143916d9559a28b384a4a6"
+},{
+  address: "0xB604520320aBD663574D1A408F02230740de4c08",
+  privateKey : "0x39ec1cee1d45ff1b45bcf0f19c375840f1929bc2c9854f1563aec2fa6797f589",
+  publicKey : "0x043de542b88b14bc9c6e24fd3454ea3ad8afbf93c7c8e05846e5cf99433b26133d35fc681ec1c78956f977c336453c7631644af4b3ab8c43661787271cc7af976d"
+}]
+
+const proofProvider = {
+  address: "0xda9ca334bc4973F22c7AC805C14f3a841095Cd8B",
+  privateKey: "0xb34b5a7f19f99aae525e9320999aef45e92e4f10e97518e4cb66f0bad8bd1b93",
+  publicKey: "0x0485ac6924ef96e4fb771c4903763660fcd46a8c037f516955e5b153cbaf2c03733f31068998a7b331ee40835746e31ab837589d7e1facf95de45e7ef8c4c581da"
+}
+const zeroAddress = "0x0000000000000000000000000000000000000000"
 
 const currentNet = process.env.RPC_TARGET_NET != undefined ? process.env.RPC_TARGET_NET : 'RPC_URL_POLYGON_MAINNET'
 const registry = process.env[`CONTRACT_ADDRESS_${currentNet}_DidRegistry`]
@@ -39,7 +67,8 @@ const txSigner = new Wallet(privateKey, provider)
     
 const vdaDid = new VdaDID({
   identifier: identity,
-  chainNameOrId : '0x61',     
+  vdaKey: '0x' + privateKey,
+  chainNameOrId : '0x61',
   
   callType: 'web3',
   web3Options: {
@@ -47,6 +76,11 @@ const vdaDid = new VdaDID({
     signer: txSigner
   }
 })
+
+const createVeridaSign = (rawMsg : any, privateKey: string ) => {
+  const privateKeyArray = new Uint8Array(Buffer.from(privateKey.slice(2), 'hex'))
+  return EncryptionUtils.signData(rawMsg, privateKeyArray)
+}
 
 function sleep(ms) {
   return new Promise((resolve) => {
@@ -59,6 +93,7 @@ jest.setTimeout(600000)
 describe('VdaDID', () => {
   let doc
   let didResolver
+  let proof
 
   beforeAll(async () => {
     const providerConfig = { 
@@ -68,8 +103,15 @@ describe('VdaDID', () => {
     }
     const vdaDidResolver = getResolver(providerConfig)
     didResolver = new Resolver(vdaDidResolver)
+
+    const proofRawMsg = ethers.utils.solidityPack(
+      ['address', 'address'],
+      [identity, proofProvider.address]
+    )
+    proof = createVeridaSign(proofRawMsg, proofProvider.privateKey)
   })
 
+  /*
   it('defaults owner to itself', async () => {
     const prevOwner = await vdaDid.lookupOwner()
     console.log('Prev Owner = ', prevOwner)
@@ -82,7 +124,115 @@ describe('VdaDID', () => {
     console.log('New Owner = ', newOwner)
 
   })
+  */
 
+  describe ('crete a complete DIDDocument', () => {
+    it ('add delegates',async () => {
+      const delegate1 = '0x01298a7ec3e153dac8d0498ea9b40d3a40b51900'
+      await vdaDid.addDelegate(
+        delegate1,
+        {
+          expiresIn: 86400
+        }
+      )
+    })
+
+    /*
+    it('add attributes',async () => {
+      const keyAlgorithm = [
+        'Secp256k1',
+        'Rsa',
+        'Ed25519'
+      ]
+  
+      const keyPurpose = [
+        'sigAuth',
+        'veriKey',
+        'veriKey'
+      ]
+  
+      const encoding = [
+        'hex',
+        'base64',
+        'base58'
+      ]
+  
+      const pubKeyList = [
+        '0x12345bb792710e80b7605fe4ac680eb7f070ffadcca31aeb0312df80f7300001',
+        base64.encode('0x12345638eff201f684e5a9e0ad79373a1ebe14e1d369c0cee1f6914792d00002'),
+        Base58.encode('0x123453320fcff32043e20d75727958e25d3613119058f9be77916c6357600003')       
+      ]
+  
+      const contextList = [
+        '0x678904eb5c3f53d8506e7085dfbb0ef333c5f7d0769bcaf4ca2dc0ca46d00001',
+        '0x67890621af64386c92c0badd0aa3ae3877a6ea6e298dfa54aa6b1ebe00700002',
+        '0x67890c45e3ad1ba47c69f266d6c49c589b9d70de837e318c78ff43c7f0b00003'
+      ]
+
+      for (let i = 0; i < 3; i++) {
+        const paramKey = `did/pub/${keyAlgorithm[i]}/${keyPurpose[i]}/${encoding[i]}`
+        const paramVale = `${pubKeyList[i]}?context=${contextList[i]}`
+        if (i < 2) {
+          // set attribute with proof
+          await vdaDid.setAttribute(
+            paramKey,
+            paramVale,
+            proofProvider.address,
+            proof
+          )
+        } else {
+          // set attribute without proof
+          await vdaDid.setAttribute(
+            paramKey,
+            paramVale,
+            zeroAddress,
+            ""
+          )
+        }
+      }
+    })
+    */
+
+    /*
+    it('add services',async () => {
+      const keyList = [
+        'did/svc/VeridaMessage',
+        'did/svc/VeridaDatabase',
+      ]
+      const typeList = [
+        'message',
+        'database'
+      ]
+      const contextList = [
+        '0x84e5fb4eb5c3f53d8506e7085dfbb0ef333c5f7d0769bcaf4ca2dc0ca4698fd4',
+        '0xcfbf4621af64386c92c0badd0aa3ae3877a6ea6e298dfa54aa6b1ebe00769b28'
+      ]
+  
+      const serviceEndPoint = 'https://db.testnet.verida.io:5002'
+
+      for (let i = 0; i < keyList.length; i++) {
+        const paramVale = `${serviceEndPoint}?context=${contextList[i]}&type=${typeList[i]}`
+        await vdaDid.setAttribute(
+          keyList[i],
+          paramVale
+        )
+      }
+    })
+    */
+
+    it('resolve document',async () => {
+      doc = await didResolver.resolve(vdaDid.did)
+      console.log('Entire Document : ', doc.didDocument);
+
+      console.log("verificationMethod : ", doc.didDocument.verificationMethod)
+      console.log("AssertionMethod : ", doc.didDocument.assertionMethod)
+      console.log("Authentication : ", doc.didDocument.authentication)
+      console.log("keyAgreement : ", doc.didDocument.keyAgreement)
+      console.log("service : ", doc.didDocument.service)
+    })
+  })
+
+  /*
   describe('delegates', () => {
     const delegate1 = '0x01298a7ec3e153dac8d0498ea9b40d3a40b51900'
 
@@ -265,4 +415,5 @@ describe('VdaDID', () => {
       // expect(newServiceCount).toBeLessThanOrEqual(orgServiceCount)
     })
   })
+  */
 })

@@ -21,8 +21,17 @@ export enum DelegateTypes {
   enc = 'enc',
 }
 
+/**
+ * Interface for VDA-DID instance creation
+ * @param identifier: DID
+ * @param vdaKey: private key of DID. Used to generate signature in transactions to chains
+ * @param chainNameOrId: Target chain name or chain id.
+ * @param callType : VDA-DID run mode. Values from vda-did-resolver
+ * @param web3Options: Web3 configuration depending on call type. Values from vda-did-resolver
+ */
 interface IConfig {
   identifier: string
+  vdaKey: string
   chainNameOrId?: string | number
 
   callType: CallType
@@ -57,12 +66,15 @@ export type BulkDelegateParam = {
 export type BulkAttributeParam = {
   name: string
   value: string | Uint8Array
+  proofId: string
+  proof: string
   validity?: number
 }
 
 /** A class that interacts with VdaDIDRegistry contract */
 export class VdaDID {
   public did: string
+  private signKey: string
   public address: string
   public signer?: JWTSigner
   public alg?: 'ES256K' | 'ES256K-R'
@@ -75,6 +87,7 @@ export class VdaDID {
 
     this.controller = new VdaDidController(conf.callType, conf.web3Options, conf.identifier, conf.chainNameOrId)
     this.did = this.controller.did
+    this.signKey = conf.vdaKey
 
     this.address = address
     // if (conf.signer) {
@@ -124,7 +137,7 @@ export class VdaDID {
     this.owner = newOwner
 
     // const owner = await this.lookupOwner()
-    return this.controller.changeOwner(newOwner, {
+    return this.controller.changeOwner(newOwner, this.signKey, {
       ...txOptions,
       // from: owner,
     })
@@ -145,6 +158,7 @@ export class VdaDID {
       delegateOptions?.delegateType || DelegateTypes.veriKey,
       delegate,
       delegateOptions?.expiresIn || 86400,
+      this.signKey,
       { ...txOptions /*, from: owner*/ }
     )
   }
@@ -159,13 +173,15 @@ export class VdaDID {
       return Promise.reject('a web3 provider configuration is needed for network operations')
     }
     // const owner = await this.lookupOwner()
-    return this.controller.revokeDelegate(delegateType, delegate, { ...txOptions /*, from: owner*/ })
+    return this.controller.revokeDelegate(delegateType, delegate, this.signKey, { ...txOptions /*, from: owner*/ })
   }
 
   /** Set an attribute. */
   async setAttribute(
     key: string,
     value: string | Uint8Array,
+    proofId: string,
+    proof: string,
     expiresIn = 86400,
     /** @deprecated, please use txOptions.gasLimit */
     gasLimit?: number,
@@ -180,7 +196,7 @@ export class VdaDID {
     // console.log('vda-did setAttribute value: ', value)
     // console.log('vda-did setAttribute : ', attributeToHex(key, value))
 
-    return this.controller.setAttribute(key, attributeToHex(key, value), expiresIn, {
+    return this.controller.setAttribute(key, attributeToHex(key, value), expiresIn, proofId, proof, this.signKey, {
       gasLimit,
       ...txOptions,
       // from: owner,
@@ -199,7 +215,7 @@ export class VdaDID {
       return Promise.reject('a web3 provider configuration is needed for network operations')
     }
     // const owner = await this.lookupOwner()
-    return this.controller.revokeAttribute(key, attributeToHex(key, value), {
+    return this.controller.revokeAttribute(key, attributeToHex(key, value), this.signKey, {
       gasLimit,
       ...txOptions,
       // from: owner,
@@ -242,14 +258,16 @@ export class VdaDID {
 
     const controllerAParams = attributeParams.map((item) => {
       return {
-        name: item.name,
+        ...item,
         value: attributeToHex(item.name, item.value),
         validity: item.validity ?? 86400,
       }
     })
 
     // const owner = await this.lookupOwner()
-    return this.controller.bulkAdd(controllerDParams, controllerAParams, { ...txOptions /*, from: owner*/ })
+    return this.controller.bulkAdd(controllerDParams, controllerAParams, this.signKey, {
+      ...txOptions /*, from: owner*/,
+    })
   }
 
   /** Perform a bulk transaction for removing delegates & attributes */
@@ -279,7 +297,7 @@ export class VdaDID {
     })
 
     // const owner = await this.lookupOwner()
-    return this.controller.bulkRevoke(controllerDParams, controllerAParams, {
+    return this.controller.bulkRevoke(controllerDParams, controllerAParams, this.signKey, {
       ...txOptions,
       // from: owner,
     })
