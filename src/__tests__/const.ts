@@ -17,11 +17,26 @@ const testAccounts = [
 export const badSigner = testAccounts[4]
 export const zeroAddress = '0x0000000000000000000000000000000000000000'
 
+/**
+ * Sign a raw blockchain message using a private key
+ * 
+ * @param rawMsg 
+ * @param privateKey 
+ * @returns 
+ */
 export const getVeridaSign = (rawMsg: any, privateKey: string) => {
   const privateKeyArray = new Uint8Array(Buffer.from(privateKey.slice(2), 'hex'))
   return EncryptionUtils.signData(rawMsg, privateKeyArray)
 }
 
+/**
+ * Sign a raw blockchain message, including a nonce, using a private key
+ * 
+ * @param rawMsg 
+ * @param privateKey 
+ * @param nonce 
+ * @returns 
+ */
 export const getVeridaSignWithNonce = (rawMsg: any, privateKey: string, nonce: number) => {
   rawMsg = ethers.utils.solidityPack(['bytes', 'uint256'], [rawMsg, nonce])
   return getVeridaSign(rawMsg, privateKey)
