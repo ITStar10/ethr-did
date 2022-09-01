@@ -54,11 +54,6 @@ export type KeyPair = {
   identifier: string
 }
 
-type DelegateOptions = {
-  delegateType?: DelegateTypes
-  expiresIn?: number
-}
-
 export type BulkDelegateParam = {
   delegateType?: DelegateTypes
   delegate: string
@@ -68,8 +63,7 @@ export type BulkDelegateParam = {
 export type BulkAttributeParam = {
   name: string
   value: string | Uint8Array
-  proofId: string
-  proof: string
+  proof?: string
   validity?: number
 }
 
@@ -148,7 +142,8 @@ export class VdaDID {
   /** Add a delegate */
   async addDelegate(
     delegate: string,
-    delegateOptions?: DelegateOptions,
+    delegateType = DelegateTypes.veriKey,
+    expiresIn = 86400,
     txOptions: CallOverrides = {}
   ): Promise<VdaTransactionResult> {
     if (typeof this.controller === 'undefined') {
@@ -156,13 +151,9 @@ export class VdaDID {
     }
 
     // const owner = await this.lookupOwner()
-    return this.controller.addDelegate(
-      delegateOptions?.delegateType || DelegateTypes.veriKey,
-      delegate,
-      delegateOptions?.expiresIn || 86400,
-      this.signKey,
-      { ...txOptions /*, from: owner*/ }
-    )
+    return this.controller.addDelegate(delegateType, delegate, expiresIn, this.signKey, {
+      ...txOptions /*, from: owner*/,
+    })
   }
 
   /** Revoke a delegate */
@@ -182,7 +173,6 @@ export class VdaDID {
   async setAttribute(
     key: string,
     value: string | Uint8Array,
-    proofId = ZERO_ADDRESS,
     proof = '',
     expiresIn = 86400,
     /** @deprecated, please use txOptions.gasLimit */
@@ -198,7 +188,7 @@ export class VdaDID {
     // console.log('vda-did setAttribute value: ', value)
     // console.log('vda-did setAttribute : ', attributeToHex(key, value))
 
-    return this.controller.setAttribute(key, attributeToHex(key, value), expiresIn, proofId, proof, this.signKey, {
+    return this.controller.setAttribute(key, attributeToHex(key, value), expiresIn, proof, this.signKey, {
       gasLimit,
       ...txOptions,
       // from: owner,
@@ -262,6 +252,7 @@ export class VdaDID {
       return {
         ...item,
         value: attributeToHex(item.name, item.value),
+        proof: item.proof || '',
         validity: item.validity ?? 86400,
       }
     })

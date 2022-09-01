@@ -1,86 +1,82 @@
 /* eslint-disable prettier/prettier */
-import { Resolver, Resolvable } from 'did-resolver'
+import { Resolver } from 'did-resolver'
 import { JsonRpcProvider } from '@ethersproject/providers'
 import { Wallet } from '@ethersproject/wallet'
 import { getResolver } from '@verida/vda-did-resolver'
 
-import { VdaDID, DelegateTypes, KeyPair } from '../index'
-import { verifyJWT } from 'did-jwt'
-
-import { privateKey } from '/mnt/Work/Sec/test.json'
-
-
-// Imports for test
-import { hexlify, hexValue, isBytes } from '@ethersproject/bytes'
-import * as base64 from '@ethersproject/base64'
-import { Base58 } from '@ethersproject/basex'
-import { toUtf8Bytes } from '@ethersproject/strings'
+import { VdaDID, DelegateTypes, BulkDelegateParam, BulkAttributeParam } from '../index'
 
 import { ethers } from 'ethers'
-import EncryptionUtils from '@verida/encryption-utils'
 
-const rpcUrl = 'https://data-seed-prebsc-1-s1.binance.org:8545/'
-// const rpcUrl = 'https://speedy-nodes-nyc.moralis.io/20cea78632b2835b730fdcf4/bsc/testnet'
-// Paid BSC RPC
-// https://speedy-nodes-nyc.moralis.io/24036fe0cb35ad4bdc12155f/bsc/mainnet
-// https://speedy-nodes-nyc.moralis.io/20cea78632b2835b730fdcf4/bsc/testnet
+import {
+  getVeridaSign, 
+  delegates, 
+  attributes, 
+  pubKeyList,
+} from './const'
 
 
-const testAccounts = [{
-  address : "0xFddEc248fa3FA60310c7dA7866096CA7715B604f",
-  privateKey : "0xda76b33732b82c6f2a461eaf85e1bab612cff42fe4016518e975bf6cdb79542d",
-  publicKey : "0x0429c00d6380b876d444478d00cad54a2c4f3d35e56c11353adc48d5c71f4c4be5a181ab837b99ba24b2a97f2761405d101d03905855ae68088eb8625af335d0b4"
-},{
-  address: "0x266Af2cF1622cAb50d000AaDE13198aA60ED15d6",
-  privateKey : "0xab1462b223f0b84696c0b283ac1fa4b3393eea2f2f1cee191ea17788182da8f6",
-  publicKey : "0x0416cfc657ecf1f178455987cbe66b5844ef52a00b992f6f1a398ebbbb07b42f11488a960987ad0d0f5cce8a9586090cfd43eee3c90d2296ac6faf8f63880ba559"
-},{
-  address: "0xDa6A02f01eBe37A4e5587F3E15E9621DA68fEb77",
-  privateKey : "0xeced4153adc37d9a0a43a6086084f9039cf5e8a5a1367770daff0eb58c0ba514",
-  publicKey : "0x04803f1319471d08167b3b3d08da6eff51fc98a09d17778a51e4e2815cecd5835fcdd634c6f376b87677fc6a60012a9a95120ca8d228143916d9559a28b384a4a6"
-},{
-  address: "0xB604520320aBD663574D1A408F02230740de4c08",
-  privateKey : "0x39ec1cee1d45ff1b45bcf0f19c375840f1929bc2c9854f1563aec2fa6797f589",
-  publicKey : "0x043de542b88b14bc9c6e24fd3454ea3ad8afbf93c7c8e05846e5cf99433b26133d35fc681ec1c78956f977c336453c7631644af4b3ab8c43661787271cc7af976d"
-}]
+const testMode = process.env.TEST_MODE ? process.env.TEST_MODE : 'direct'
 
-const proofProvider = {
-  address: "0xda9ca334bc4973F22c7AC805C14f3a841095Cd8B",
-  privateKey: "0xb34b5a7f19f99aae525e9320999aef45e92e4f10e97518e4cb66f0bad8bd1b93",
-  publicKey: "0x0485ac6924ef96e4fb771c4903763660fcd46a8c037f516955e5b153cbaf2c03733f31068998a7b331ee40835746e31ab837589d7e1facf95de45e7ef8c4c581da"
-}
-const zeroAddress = "0x0000000000000000000000000000000000000000"
+let privateKey = process.env.PRIVATE_KEY
+if (privateKey === undefined)
+  throw new Error('Private key not defined in env')
+if (!privateKey.startsWith('0x'))
+  privateKey = '0x' + privateKey
 
 const currentNet = process.env.RPC_TARGET_NET != undefined ? process.env.RPC_TARGET_NET : 'RPC_URL_POLYGON_MAINNET'
+const rpcUrl = process.env[currentNet]
+if(rpcUrl === undefined)
+  throw new Error("RPC url not defined in env")
+
 const registry = process.env[`CONTRACT_ADDRESS_${currentNet}_DidRegistry`]
-// const registry = '0x17dFd83eFDD2D0c430E2cA4b01d1df93cDa9960b'
 if (registry === undefined) {
   throw new Error("Registry address not defined in env")
 }
 
-const identity = '0x599b3912A63c98dC774eF3E60282fBdf14cda748'.toLowerCase()
-const owner = identity;
+const chainId = process.env[`CHAIN_ID_${currentNet}`]
+if (chainId === undefined) {
+  throw new Error('Chain ID not defined in env')
+}
+
+const identity = new Wallet(privateKey.slice(2)).address.toLowerCase()
 
 const provider = new JsonRpcProvider(rpcUrl);
+const txSigner = new Wallet(privateKey.slice(2), provider)
 
-const txSigner = new Wallet(privateKey, provider)
     
-const vdaDid = new VdaDID({
-  identifier: identity,
-  vdaKey: '0x' + privateKey,
-  chainNameOrId : '0x61',
-  
-  callType: 'web3',
-  web3Options: {
-    provider: provider,
-    signer: txSigner
-  }
-})
-
-const createVeridaSign = (rawMsg : any, privateKey: string ) => {
-  const privateKeyArray = new Uint8Array(Buffer.from(privateKey.slice(2), 'hex'))
-  return EncryptionUtils.signData(rawMsg, privateKeyArray)
-}
+const vdaDid = testMode === 'direct' ? 
+  new VdaDID({
+    identifier: identity,
+    vdaKey: privateKey,
+    chainNameOrId : chainId,
+    
+    callType: 'web3',
+    web3Options: {
+      provider: provider,
+      signer: txSigner
+    }
+  }) : 
+  new VdaDID({
+    identifier: identity,
+    vdaKey: privateKey,
+    chainNameOrId : chainId,
+    
+    callType: 'gasless',
+    web3Options: {
+      veridaKey: 'Input your Verida API key',
+      serverConfig: {
+        headers: {
+            'context-name' : 'Verida Test'
+        } 
+      },
+      postConfig: {
+          headers: {
+              'user-agent': 'Verida-Vault'
+          }
+      }
+    }
+  })
 
 function sleep(ms) {
   return new Promise((resolve) => {
@@ -88,112 +84,220 @@ function sleep(ms) {
   });
 }
 
+const getDelegateType = (delegateType: string) => {
+  if (delegateType === 'sigAuth') {
+    return DelegateTypes.sigAuth
+  } else if (delegateType === 'enc') {
+    return DelegateTypes.enc
+  }
+  return DelegateTypes.veriKey
+}
+
 jest.setTimeout(600000)
 
 describe('VdaDID', () => {
   let doc
   let didResolver
-  let proof
+
+  const getProof = (did: string, pubKeyAddr: string, signKey: string ) => {
+    const proofRawMsg = ethers.utils.solidityPack(
+      ['address', 'address'],
+      [did, pubKeyAddr]
+    )
+    return getVeridaSign(proofRawMsg, signKey)
+  }
 
   beforeAll(async () => {
     const providerConfig = { 
       rpcUrl, 
       registry,
-      chainId : 97,
+      chainId : chainId,
     }
     const vdaDidResolver = getResolver(providerConfig)
     didResolver = new Resolver(vdaDidResolver)
-
-    const proofRawMsg = ethers.utils.solidityPack(
-      ['address', 'address'],
-      [identity, proofProvider.address]
-    )
-    proof = createVeridaSign(proofRawMsg, proofProvider.privateKey)
   })
 
-  /*
-  it('defaults owner to itself', async () => {
-    const prevOwner = await vdaDid.lookupOwner()
-    console.log('Prev Owner = ', prevOwner)
-    
-    // Don't test continuously. Require private key
-    const tx = await vdaDid.changeOwner(owner)
-    console.log('ChangeOwner() : ', tx)
+  describe('Delegate test', () => {
+    const delegate = delegates[0].delegate
+    const delegateType = DelegateTypes.veriKey
 
-    const newOwner = await vdaDid.lookupOwner()
-    console.log('New Owner = ', newOwner)
+    it('Add delegate', async () => {
+      const result = await vdaDid.addDelegate(
+        delegate,
+        delegateType,
+        86400
+      )
 
+      expect(result.success).toEqual(true)
+    })
+
+    it('Revoke delegate', async () => {
+
+      const result = await vdaDid.revokeDelegate( delegate, delegateType )
+
+      expect(result.success).toEqual(true)
+     
+    })
   })
-  */
+
+  describe('Attribute test', () => {
+    it ('set Attributes',async () => {
+      for (let i = 0; i < 3; i++) {
+        const pubKeyAddr = ethers.utils.computeAddress(pubKeyList[i])
+        const proof = getProof(identity, pubKeyAddr, privateKey!)
+        const result = await vdaDid.setAttribute(
+          <string>attributes[i].name,
+          <string>attributes[i].value,
+          proof
+        )
+        expect(result.success).toEqual(true)
+      }      
+    })
+
+    it ('revoke Attributes', async () => {
+      for (let i = 0; i < 3; i++) {
+        const result = await vdaDid.revokeAttribute(
+          <string>attributes[i].name,
+          <string>attributes[i].value,
+        )
+        expect(result.success).toEqual(true)
+      }
+    })
+  })
+
+  describe('Srvices test', () => {
+    const keyList = [
+      'did/svc/VeridaMessage',
+      'did/svc/VeridaDatabase',
+    ]
+    const typeList = [
+      'message',
+      'database'
+    ]
+    const contextList = [
+      Wallet.createRandom().address,
+      Wallet.createRandom().address,
+    ]
+
+    const serviceEndPoint = 'https://db.testnet.verida.io:5002'
+
+    it ('add sevices', async () => {
+      for (let i = 0; i < keyList.length; i++) {
+        const paramVale = `${serviceEndPoint}?context=${contextList[i]}&type=${typeList[i]}`
+        const result = await vdaDid.setAttribute(
+          keyList[i],
+          paramVale
+        )
+        expect(result.success).toEqual(true)
+      }
+    })
+
+    it ('revoke sevices', async () => {
+      for (let i = 0; i < 2; i++) {
+        const paramVale = `${serviceEndPoint}?context=${contextList[i]}&type=${typeList[i]}`
+        const result = await vdaDid.revokeAttribute(
+          keyList[i],
+          paramVale
+        )
+        expect(result.success).toEqual(true)
+      }
+    })
+  })
+
+  describe('Bulk test', () => {
+    const bulkDelegateParams = [
+      delegates[0],
+      delegates[1]
+    ]
+    const bulkAttrParams = [
+      attributes[0]
+    ]
+
+    it("bulkAdd test",async () => {
+      const addDelegateParams: BulkDelegateParam[] = []
+      bulkDelegateParams.forEach(item => 
+        addDelegateParams.push({
+          delegate: item.delegate,
+          delegateType: getDelegateType(<string>item.delegateType),
+          validity: item.validity
+        })
+      )
+
+      const proofAddress = ethers.utils.computeAddress(pubKeyList[0])
+      const proof = getProof(identity, proofAddress, privateKey!)
+
+      const addAttrParams: BulkAttributeParam[] = []
+      bulkAttrParams.forEach(item => {
+        addAttrParams.push({
+          name: <string>item.name,
+          value: <string>item.value,
+          proof,
+          validity: item.validity
+        })
+      })
+
+      const result = await vdaDid.bulkAdd(
+        addDelegateParams,
+        addAttrParams
+      )
+      expect(result.success).toEqual(true)
+    })
+
+    it("bulkRevoke test",async () => {
+      const addDelegateParams: BulkDelegateParam[] = []
+      bulkDelegateParams.forEach(item => 
+        addDelegateParams.push({
+          delegate: item.delegate,
+          delegateType: getDelegateType(<string>item.delegateType),
+        })
+      )
+  
+      const addAttrParams: BulkAttributeParam[] = []
+      bulkAttrParams.forEach(item => {
+        addAttrParams.push({
+          name: <string>item.name,
+          value: <string>item.value,
+        })
+      })
+  
+      const result = await vdaDid.bulkRevoke(
+        addDelegateParams,
+        addAttrParams
+      )
+      expect(result.success).toEqual(true)
+    })
+  })
 
   describe ('crete a complete DIDDocument', () => {
     it ('add delegates',async () => {
-      const delegate1 = '0x01298a7ec3e153dac8d0498ea9b40d3a40b51900'
       await vdaDid.addDelegate(
-        delegate1,
-        {
-          expiresIn: 86400
-        }
+        delegates[0].delegate,
+        getDelegateType(<string>delegates[0].delegateType),
+        delegates[0].validity
       )
     })
 
-    /*
     it('add attributes',async () => {
-      const keyAlgorithm = [
-        'Secp256k1',
-        'Rsa',
-        'Ed25519'
-      ]
-  
-      const keyPurpose = [
-        'sigAuth',
-        'veriKey',
-        'veriKey'
-      ]
-  
-      const encoding = [
-        'hex',
-        'base64',
-        'base58'
-      ]
-  
-      const pubKeyList = [
-        '0x12345bb792710e80b7605fe4ac680eb7f070ffadcca31aeb0312df80f7300001',
-        base64.encode('0x12345638eff201f684e5a9e0ad79373a1ebe14e1d369c0cee1f6914792d00002'),
-        Base58.encode('0x123453320fcff32043e20d75727958e25d3613119058f9be77916c6357600003')       
-      ]
-  
-      const contextList = [
-        '0x678904eb5c3f53d8506e7085dfbb0ef333c5f7d0769bcaf4ca2dc0ca46d00001',
-        '0x67890621af64386c92c0badd0aa3ae3877a6ea6e298dfa54aa6b1ebe00700002',
-        '0x67890c45e3ad1ba47c69f266d6c49c589b9d70de837e318c78ff43c7f0b00003'
-      ]
-
       for (let i = 0; i < 3; i++) {
-        const paramKey = `did/pub/${keyAlgorithm[i]}/${keyPurpose[i]}/${encoding[i]}`
-        const paramVale = `${pubKeyList[i]}?context=${contextList[i]}`
+        const proofAddress = ethers.utils.computeAddress(pubKeyList[i])
+        const proof = getProof(identity, proofAddress, privateKey!)
         if (i < 2) {
           // set attribute with proof
           await vdaDid.setAttribute(
-            paramKey,
-            paramVale,
-            proofProvider.address,
+            <string>attributes[i].name,
+            <string>attributes[i].value,
             proof
           )
         } else {
           // set attribute without proof
           await vdaDid.setAttribute(
-            paramKey,
-            paramVale,
-            zeroAddress,
-            ""
+            <string>attributes[i].name,
+            <string>attributes[i].value,
           )
         }
       }
     })
-    */
 
-    /*
     it('add services',async () => {
       const keyList = [
         'did/svc/VeridaMessage',
@@ -218,7 +322,6 @@ describe('VdaDID', () => {
         )
       }
     })
-    */
 
     it('resolve document',async () => {
       doc = await didResolver.resolve(vdaDid.did)
@@ -231,189 +334,4 @@ describe('VdaDID', () => {
       console.log("service : ", doc.didDocument.service)
     })
   })
-
-  /*
-  describe('delegates', () => {
-    const delegate1 = '0x01298a7ec3e153dac8d0498ea9b40d3a40b51900'
-
-    it('add signing delegate', async () => {
-      const orgDoc = await didResolver.resolve(vdaDid.did)
-      
-      await vdaDid.addDelegate(
-        delegate1,
-        {
-          expiresIn: 86400
-        }
-      )
-
-      const newDoc = await didResolver.resolve(vdaDid.did)
-
-      console.log('OrgDoc: ', orgDoc.didDocument)
-      console.log('NewDoc: ', newDoc.didDocument)
-
-      // expect(newDoc.didDocument.verificationMethod.length).toEqual(orgDoc.didDocument.verificationMethod.length + 1)
-      // expect(newDoc.didDocument.assertionMethod.length).toEqual(orgDoc.didDocument.assertionMethod.length + 1)
-
-    })
-
-    it('revoke signing delegate', async () => {
-      const orgDoc = await didResolver.resolve(vdaDid.did)
-
-      await vdaDid.revokeDelegate(delegate1)
-      // Need to wait after revoke run because of block time stamp on parsing.
-      await sleep(5000);
-
-      const newDoc = await didResolver.resolve(vdaDid.did)
-
-      console.log('OrgDoc: ', orgDoc.didDocument)
-      console.log('NewDoc: ', newDoc.didDocument)
-
-      // expect(newDoc.didDocument.verificationMethod.length).toEqual(orgDoc.didDocument.verificationMethod.length - 1)
-      // expect(newDoc.didDocument.assertionMethod.length).toEqual(orgDoc.didDocument.assertionMethod.length - 1)
-     
-    })
-  })
-
-  describe('attributes', () => {
-    const keyAlgorithm = [
-      'Secp256k1',
-      'Rsa',
-      'Ed25519'
-    ]
-
-    const keyPurpose = [
-      'sigAuth',
-      'veriKey',
-      'veriKey'
-    ]
-
-    const encoding = [
-      'hex',
-      'base64',
-      'base58'
-    ]
-
-    const pubKeyList = [
-      '0x12345bb792710e80b7605fe4ac680eb7f070ffadcca31aeb0312df80f7300001',
-      base64.encode('0x12345638eff201f684e5a9e0ad79373a1ebe14e1d369c0cee1f6914792d00002'),
-      Base58.encode('0x123453320fcff32043e20d75727958e25d3613119058f9be77916c6357600003')       
-    ]
-
-    const contextList = [
-      '0x678904eb5c3f53d8506e7085dfbb0ef333c5f7d0769bcaf4ca2dc0ca46d00001',
-      '0x67890621af64386c92c0badd0aa3ae3877a6ea6e298dfa54aa6b1ebe00700002',
-      '0x67890c45e3ad1ba47c69f266d6c49c589b9d70de837e318c78ff43c7f0b00003'
-    ]
-
-    it ('set Attributes',async () => {
-      doc = await didResolver.resolve(vdaDid.did)
-
-      console.log("verificationMethod : ", doc.didDocument.verificationMethod)
-      console.log("AssertionMethod : ", doc.didDocument.assertionMethod)
-      console.log("Authentication : ", doc.didDocument.authentication)
-      console.log("keyAgreement : ", doc.didDocument.keyAgreement)
-
-      for (let i = 0; i < 3; i++) {
-        const paramKey = `did/pub/${keyAlgorithm[i]}/${keyPurpose[i]}/${encoding[i]}`
-        const paramVale = `${pubKeyList[i]}?context=${contextList[i]}`
-        await vdaDid.setAttribute(
-          paramKey,
-          paramVale
-        )
-      }
-      
-      console.log('resolve')
-      const newDoc = await didResolver.resolve(vdaDid.did)
-
-      console.log("verificationMethod : ", newDoc.didDocument.verificationMethod)
-      console.log("AssertionMethod : ", newDoc.didDocument.assertionMethod)
-      console.log("Authentication : ", newDoc.didDocument.authentication)
-      console.log("keyAgreement : ", newDoc.didDocument.keyAgreement)
-    })
-
-    it ('revoke Attributes', async () => {
-      doc = await didResolver.resolve(vdaDid.did)
-
-      console.log("verificationMethod : ", doc.didDocument.verificationMethod)
-      console.log("AssertionMethod : ", doc.didDocument.assertionMethod)
-      console.log("Authentication : ", doc.didDocument.authentication)
-      console.log("keyAgreement : ", doc.didDocument.keyAgreement)
-
-      for (let i = 0; i < 3; i++) {
-        const paramKey = `did/pub/${keyAlgorithm[i]}/${keyPurpose[i]}/${encoding[i]}`
-        const paramVale = `${pubKeyList[i]}?context=${contextList[i]}`
-        await vdaDid.revokeAttribute(
-          paramKey,
-          paramVale
-        )
-      }
-
-      const newDoc = await didResolver.resolve(vdaDid.did)
-
-      console.log("verificationMethod : ", newDoc.didDocument.verificationMethod)
-      console.log("AssertionMethod : ", newDoc.didDocument.assertionMethod)
-      console.log("Authentication : ", newDoc.didDocument.authentication)
-      console.log("keyAgreement : ", newDoc.didDocument.keyAgreement)
-    })
-  })
-
-  describe('services', () => {
-    const keyList = [
-      'did/svc/VeridaMessage',
-      'did/svc/VeridaDatabase',
-    ]
-    const typeList = [
-      'message',
-      'database'
-    ]
-    const contextList = [
-      '0x84e5fb4eb5c3f53d8506e7085dfbb0ef333c5f7d0769bcaf4ca2dc0ca4698fd4',
-      '0xcfbf4621af64386c92c0badd0aa3ae3877a6ea6e298dfa54aa6b1ebe00769b28'
-    ]
-
-    const serviceEndPoint = 'https://db.testnet.verida.io:5002'
-
-    it ('add sevices', async () => {
-      doc = await didResolver.resolve(vdaDid.did)
-      console.log("Org service : ", doc.didDocument.service)
-
-      const orgServiceCount = doc.didDocument.service?.length ?? 0
-
-      for (let i = 0; i < keyList.length; i++) {
-        const paramVale = `${serviceEndPoint}?context=${contextList[i]}&type=${typeList[i]}`
-        await vdaDid.setAttribute(
-          keyList[i],
-          paramVale
-        )
-      }
-
-      const newDoc = await didResolver.resolve(vdaDid.did)
-      console.log("New service : ", newDoc.didDocument.service)
-
-      // expect(newDoc.didDocument.service.length).toEqual(orgServiceCount + keyList.length)
-    })
-
-    it ('revoke sevices', async () => {
-      doc = await didResolver.resolve(vdaDid.did)
-      console.log("Org service : ", doc.didDocument.service)
-
-      const orgServiceCount = doc.didDocument.service?.length ?? 0
-
-      for (let i = 0; i < 2; i++) {
-        const paramVale = `${serviceEndPoint}?context=${contextList[i]}&type=${typeList[i]}`
-        await vdaDid.revokeAttribute(
-          keyList[i],
-          paramVale
-        )
-      }
-
-      const newDoc = await didResolver.resolve(vdaDid.did)
-      console.log("New service : ", newDoc.didDocument.service)
-
-      const newServiceCount = newDoc.didDocument.service?.length ?? 0
-
-      // expect(newServiceCount).toBeLessThanOrEqual(orgServiceCount)
-    })
-  })
-  */
 })
