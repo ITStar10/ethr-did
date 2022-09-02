@@ -99,6 +99,14 @@ describe('VdaDID', () => {
   let doc
   let didResolver
 
+  /**
+   * Generate a proof that a DID controls a public key
+   * 
+   * @param did DID identity
+   * @param pubKeyAddr Public key controlled by the DID
+   * @param signKey Private key of the DID, used to sign a proof that DID controls the public key
+   * @returns 
+   */
   const getProof = (did: string, pubKeyAddr: string, signKey: string ) => {
     const proofRawMsg = ethers.utils.solidityPack(
       ['address', 'address'],
