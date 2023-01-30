@@ -19,17 +19,17 @@ An example of a DID document resolved using the Vda-Did-Resolver:
     'https://www.w3.org/ns/did/v1',
     'https://identity.foundation/EcdsaSecp256k1RecoverySignature2020/lds-ecdsa-secp256k1-recovery2020-0.0.jsonld'
   ],
-  id: 'did:ethr:0xb9c5714089478a327f09197987f16f9e5d936e8a',
+  id: 'did:vda:0xb9c5714089478a327f09197987f16f9e5d936e8a',
   verificationMethod: [
     {
-      id: `did:ethr:0xb9c5714089478a327f09197987f16f9e5d936e8a#controller`,
+      id: `did:vda:0xb9c5714089478a327f09197987f16f9e5d936e8a#controller`,
       type: 'EcdsaSecp256k1RecoveryMethod2020',
       controller: did,
-      blockchainAccountId: `did:ethr:0xb9c5714089478a327f09197987f16f9e5d936e8a@eip155:1`
+      blockchainAccountId: `did:vda:0xb9c5714089478a327f09197987f16f9e5d936e8a@eip155:1`
     }
   ],
-  assertionMethod: [`did:ethr:0xb9c5714089478a327f09197987f16f9e5d936e8a#controller`],
-  authentication: [`did:ethr:0xb9c5714089478a327f09197987f16f9e5d936e8a#controller`]
+  assertionMethod: [`did:vda:0xb9c5714089478a327f09197987f16f9e5d936e8a#controller`],
+  authentication: [`did:vda:0xb9c5714089478a327f09197987f16f9e5d936e8a#controller`]
 }
 ```
 
